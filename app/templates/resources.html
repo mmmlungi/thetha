@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1>Free help lines</h1>
+  <ul class="helplines">
+    {% for h in helplines %}
+      <li><strong>{{ h.name }}</strong> <span class="num">{{ h.number }}</span><br><span class="muted">{{ h.note }}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+<section class="card">
+  <h2>How to get a protection order</h2>
+  <ol>{% for s in steps %}<li>{{ s }}</li>{% endfor %}</ol>
+</section>
+{% endblock %}

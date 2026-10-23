@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1>My safety plan</h1>
+  <p class="muted">Plan ahead so you can act quickly if you need to leave. Encrypted, and only you can see it.</p>
+  <form method="post" class="grid">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label class="full">People I can trust (and their numbers) <textarea name="contacts" maxlength="500" rows="2">{{ plan.contacts }}</textarea></label>
+    <label>Code word that means "I need help" <input name="code_word" maxlength="50" value="{{ plan.code_word }}"></label>
+    <label>Where I can go <input name="safe_place" maxlength="300" value="{{ plan.safe_place }}"></label>
+    <label class="full">Where my emergency bag is hidden <input name="bag_location" maxlength="200" value="{{ plan.bag_location }}"></label>
+    <fieldset class="full">
+      <legend>Documents & items to take</legend>
+      {% for d in docs %}
+        <label class="check"><input type="checkbox" name="documents" value="{{ d }}" {% if plan.documents and d in plan.documents %}checked{% endif %}> {{ d }}</label>
+      {% endfor %}
+    </fieldset>
+    <label class="full">Notes (safest exit, times they are away…) <textarea name="notes" maxlength="2000" rows="3">{{ plan.notes }}</textarea></label>
+    <button type="submit">Save encrypted plan</button>
+  </form>
+</section>
+{% endblock %}

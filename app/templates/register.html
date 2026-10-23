@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1>Create a private account</h1>
+  <p class="muted">You only need an account to keep a journal or safety plan. Pick a nickname nobody would link to you. We don't ask for your name, email or phone.</p>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Nickname (username) <input name="username" maxlength="32" required autocomplete="off"></label>
+    <label>Password (8+ characters, letters and numbers) <input name="password" type="password" maxlength="128" required></label>
+    <label>Confirm password <input name="confirm" type="password" maxlength="128" required></label>
+    <button type="submit">Create account</button>
+  </form>
+</section>
+{% endblock %}

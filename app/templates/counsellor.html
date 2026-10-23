@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1>Counsellor dashboard</h1>
+  <p class="muted">Statistics are anonymous: no chat text is ever stored. Last 30 days.</p>
+  <div class="stats">
+    <div class="stat"><span class="big">{{ stats.total }}</span>chat messages</div>
+    <div class="stat high"><span class="big">{{ stats.risk.get('high', 0) }}</span>high-risk checks</div>
+    <div class="stat"><span class="big">{{ stats.risk.get('medium', 0) }}</span>medium-risk checks</div>
+    <div class="stat"><span class="big">{{ callbacks|length }}</span>open callbacks</div>
+  </div>
+  <div class="grid">
+    <div><h3>Top needs</h3><ul>{% for k, v in stats.intents %}<li>{{ k.replace('_', ' ') }}: {{ v }}</li>{% endfor %}</ul></div>
+    <div><h3>Provinces</h3><ul>{% for k, v in stats.provinces %}<li>{{ k }}: {{ v }}</li>{% else %}<li class="muted">No data</li>{% endfor %}</ul></div>
+    <div><h3>Languages</h3><ul>{% for k, v in stats.languages %}<li>{{ k }}: {{ v }}</li>{% endfor %}</ul></div>
+  </div>
+</section>
+<section class="card">
+  <h2>Open callback requests</h2>
+  <table>
+    <thead><tr><th>Ref</th><th>Urgency</th><th>Name</th><th>Phone</th><th>Safe time</th><th>Voicemail OK</th><th>Province</th><th>Notes</th><th></th></tr></thead>
+    <tbody>
+    {% for c in callbacks %}
+      <tr class="{{ c.urgency }}">
+        <td>{{ c.ref }}</td><td>{{ c.urgency }}</td><td>{{ c.name or '-' }}</td><td>{{ c.phone }}</td>
+        <td>{{ c.safe_time }}</td><td>{{ 'yes' if c.leave_message else 'NO' }}</td><td>{{ c.province }}</td><td>{{ c.notes }}</td>
+        <td><form method="post" action="{{ url_for('main.counsellor_close', cb_id=c.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="small" type="submit">Mark done</button></form></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="9" class="muted">No open requests.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

@@ -1,0 +1,7 @@
+﻿instance/
+__pycache__/
+.pytest_cache/
+*.db
+*.db-journal
+dev_keys.json
+.env

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1>My data (POPIA rights)</h1>
+  <p>You own your data. You can download it, for example to give to a lawyer or the court, or delete it permanently.</p>
+  <p><a class="button" href="{{ url_for('main.my_data_export') }}">Download my records (JSON)</a></p>
+  <hr>
+  <h2>Delete everything</h2>
+  <p class="muted">This permanently erases your account, journal and safety plan. It cannot be undone.</p>
+  <form method="post" action="{{ url_for('main.my_data_delete') }}" class="confirm-delete">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Confirm with your password <input type="password" name="password" required></label>
+    <button class="danger" type="submit">Delete all my data</button>
+  </form>
+</section>
+{% endblock %}

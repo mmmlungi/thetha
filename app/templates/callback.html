@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1>Ask a counsellor to call you</h1>
+  <p class="muted">Your number is encrypted. Only a counsellor can see it, and it is deleted after your case is closed.</p>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Name or nickname (optional) <input name="name" maxlength="60"></label>
+    <label>Phone number <input name="phone" type="tel" maxlength="20" required placeholder="0821234567"></label>
+    <label>When is it safe to call? <input name="safe_time" maxlength="100" required placeholder="Weekdays 10:00-12:00"></label>
+    <label>Province
+      <select name="province" required>{% for p in provinces %}<option>{{ p }}</option>{% endfor %}</select>
+    </label>
+    <label>How urgent?
+      <select name="urgency"><option value="normal">Soon</option><option value="urgent">Urgent (today)</option></select>
+    </label>
+    <label class="check"><input type="checkbox" name="leave_message" value="yes"> It is safe to leave a voice message</label>
+    <label>Anything the counsellor should know (optional) <textarea name="notes" maxlength="1000" rows="3"></textarea></label>
+    <button type="submit">Request callback</button>
+  </form>
+</section>
+{% endblock %}

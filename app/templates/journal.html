@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1>My private journal</h1>
+  <p class="muted">Record what happened. It can help with a protection order or police case. Everything here is encrypted with AES-256. Only you can read it.</p>
+  <form method="post" class="grid">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label>Date it happened <input type="date" name="date" required></label>
+    <label>Type
+      <select name="type" required>{% for t in types %}<option value="{{ t }}">{{ t|capitalize }}</option>{% endfor %}</select>
+    </label>
+    <label class="full">What happened <textarea name="description" maxlength="4000" required rows="4"></textarea></label>
+    <label>Where <input name="location" maxlength="200"></label>
+    <label>Injuries <input name="injuries" maxlength="1000"></label>
+    <label class="full">Witnesses <input name="witnesses" maxlength="500"></label>
+    <button type="submit">Save encrypted entry</button>
+  </form>
+</section>
+<section class="card">
+  <h2>Entries ({{ entries|length }})</h2>
+  {% for e in entries %}
+    <article class="entry">
+      <header><strong>{{ e.date }}</strong> · <span class="tag">{{ e.type }}</span></header>
+      <p class="pre">{{ e.description }}</p>
+      {% if e.location %}<p><b>Where:</b> {{ e.location }}</p>{% endif %}
+      {% if e.injuries %}<p><b>Injuries:</b> {{ e.injuries }}</p>{% endif %}
+      {% if e.witnesses %}<p><b>Witnesses:</b> {{ e.witnesses }}</p>{% endif %}
+      <form method="post" action="{{ url_for('main.journal_delete', entry_id=e.id) }}" class="confirm-delete">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="danger small" type="submit">Delete</button>
+      </form>
+    </article>
+  {% else %}
+    <p class="muted">No entries yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}

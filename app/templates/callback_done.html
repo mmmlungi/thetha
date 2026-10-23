@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card narrow">
+  <h1>Request received</h1>
+  <p>Your reference is <strong class="ref">{{ ref }}</strong>. A counsellor will call you at the time you chose.</p>
+  <p>If you are in danger before then, call <a href="tel:10111">10111</a> or the GBV Command Centre on <a href="tel:0800428428">0800 428 428</a>.</p>
+  <p><a href="{{ url_for('main.index') }}">Back to chat</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="robots" content="noindex">
+  {# Neutral tab title so it isn't obvious on a shared phone #}
+  <title>Thetha · Wellness</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <button id="quick-exit" class="quick-exit" type="button" title="Leave this site now (or press Esc twice)">✕ Quick exit</button>
+  <header class="top">
+    <a class="brand" href="{{ url_for('main.index') }}">Thetha</a>
+    <nav>
+      <a href="{{ url_for('main.index') }}">Chat</a>
+      <a href="{{ url_for('main.resources') }}">Help lines</a>
+      {% if g.user %}
+        {% if g.user.role == 'counsellor' %}
+          <a href="{{ url_for('main.counsellor') }}">Dashboard</a>
+        {% else %}
+          <a href="{{ url_for('main.journal') }}">Journal</a>
+          <a href="{{ url_for('main.safety_plan') }}">Safety plan</a>
+          <a href="{{ url_for('main.my_data') }}">My data</a>
+        {% endif %}
+        <form method="post" action="{{ url_for('main.logout') }}" class="inline">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="link" type="submit">Log out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('main.login') }}">Log in</a>
+      {% endif %}
+    </nav>
+  </header>
+  <div class="emergency-bar">In danger now? Call <a href="tel:10111">10111</a> · <a href="tel:112">112</a> · GBV Command Centre <a href="tel:0800428428">0800 428 428</a></div>
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}<p class="flash {{ cat }}">{{ msg }}</p>{% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer>Thetha does not store your chat messages. Journal, safety plan and contact details are encrypted.</footer>
+</body>
+</html>

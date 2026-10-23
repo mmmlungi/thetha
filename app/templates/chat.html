@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="chat-card">
+  <div id="log" class="log" aria-live="polite">
+    <div class="msg bot">Hello, I'm Thetha. You are safe to talk here. I don't save what you type.
+You can write in English, isiZulu, isiXhosa, Afrikaans or Sesotho.
+
+Tip: press Quick exit, or Esc twice, to leave instantly.</div>
+    <div class="chips" id="starter-chips">
+      <button class="chip" type="button">I'm being abused</button>
+      <button class="chip" type="button">Is this abuse?</button>
+      <button class="chip" type="button">Check my risk</button>
+      <button class="chip" type="button">Protection order</button>
+      <button class="chip" type="button">Make a safety plan</button>
+      <button class="chip" type="button">Talk to a counsellor</button>
+    </div>
+  </div>
+  <form id="chat-form" class="chat-form" autocomplete="off">
+    <select id="province" aria-label="Your province (optional)">
+      <option value="">Province (optional)</option>
+      {% for p in provinces %}<option>{{ p }}</option>{% endfor %}
+    </select>
+    <input id="message" maxlength="500" placeholder="Type here…" aria-label="Message" required>
+    <button type="submit">Send</button>
+  </form>
+</section>
+{% endblock %}
