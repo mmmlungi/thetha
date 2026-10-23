@@ -13,7 +13,7 @@ HELPLINES = {
     "emergency_mobile": {"name": "Emergency (any cellphone)", "number": "112", "note": "Works without airtime"},
     "gbvcc": {
         "name": "GBV Command Centre",
-        "number": "080 042 8428",
+        "number": "0800 428 428",
         "note": "Free, 24/7. USSD *120*7867# or SMS 'Help' to 31531",
     },
     "stop_gbv": {"name": "Stop Gender Violence Helpline", "number": "0800 150 150", "note": "Free, 24/7"},
