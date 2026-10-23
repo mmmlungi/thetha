@@ -107,6 +107,26 @@ Purge expired data daily with `python -m flask --app app purge-expired`, for exa
 
 Production: set `THETHA_ENV=production`, `THETHA_SECRET_KEY` and `THETHA_MASTER_KEY` (generate it with `python -c "from app.crypto import generate_master_key as g; print(g())"`). Serve it over HTTPS behind gunicorn or waitress.
 
+### Free hosting on PythonAnywhere
+
+1. Sign up for a free **Beginner** account at pythonanywhere.com.
+2. **Consoles → Bash**, then run:
+   ```bash
+   git clone https://github.com/mmmlungi/thetha.git
+   bash ~/thetha/deploy/pythonanywhere_setup.sh --demo
+   ```
+   With `--demo` you choose a private password for the `demo` and `counsellor` accounts. The README password is refused in production.
+   **Back up `~/.thetha_keys`**: if it's lost, the encrypted data can never be read again.
+3. **Web → Add a new web app → Manual configuration**, and pick the Python version the script printed.
+4. In the Web tab:
+   - Open the **WSGI configuration file** link and replace its contents with `deploy/pythonanywhere_wsgi.py`.
+   - Under **Static files**, add URL `/static/` → directory `/home/<username>/thetha/app/static`.
+   - Turn on **Force HTTPS**.
+   - Press **Reload**.
+5. Open `https://<username>.pythonanywhere.com`.
+
+To update later: `cd ~/thetha && git pull`, then press **Reload**. Free web apps must be extended in the Web tab every 3 months.
+
 ## 7. Suggested 5-minute demo
 
 1. **The problem** (30s): the barriers in section 1.

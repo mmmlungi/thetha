@@ -1,4 +1,4 @@
-"""Fill the dev database with demo data for presentations. Never run in production."""
+﻿"""Fill the dev database with demo data for presentations. Never run in production."""
 import os
 import random
 import secrets
@@ -12,8 +12,12 @@ from werkzeug.security import generate_password_hash  # noqa: E402
 from app import create_app  # noqa: E402
 from app.db import get_db, utcnow  # noqa: E402
 from app.resources import PROVINCES  # noqa: E402
+from app.security import check_password_policy  # noqa: E402
 
-DEMO_PASSWORD = "Demo2026pass"
+# Local demos use a known password; a public deployment must choose its own (THETHA_DEMO_PASSWORD),
+# otherwise anyone reading the README could log in as counsellor and see real callers' numbers.
+DEMO_PASSWORD = os.environ.get("THETHA_DEMO_PASSWORD") or "Demo2026pass"
+SHOWN_PASSWORD = "<your chosen password>" if os.environ.get("THETHA_DEMO_PASSWORD") else DEMO_PASSWORD
 INTENTS = ["abuse_disclosure"] * 9 + ["protection_order"] * 6 + ["safety_plan"] * 4 + \
           ["sexual_assault"] * 3 + ["financial_abuse"] * 3 + ["online_abuse"] * 2 + \
           ["counselling"] * 3 + ["shelter"] * 2 + ["emergency"] * 2 + ["greeting"] * 5 + ["risk_result"] * 4
@@ -22,7 +26,11 @@ INTENTS = ["abuse_disclosure"] * 9 + ["protection_order"] * 6 + ["safety_plan"] 
 def main():
     app = create_app()
     if app.config["ENV_NAME"] == "production":
-        sys.exit("Refusing to seed a production database.")
+        if "--demo-in-production" not in sys.argv:
+            sys.exit("Refusing to seed a production database.")
+        if not os.environ.get("THETHA_DEMO_PASSWORD"):
+            sys.exit("Set THETHA_DEMO_PASSWORD: the default demo password is public in the README.")
+        check_password_policy(DEMO_PASSWORD)
     rng = random.Random(7)  # nosec B311 - demo data, not security
     with app.app_context():
         db, v = get_db(), app.extensions["vault"]
@@ -53,7 +61,7 @@ def main():
 
         if db.execute("SELECT COUNT(*) FROM chat_events").fetchone()[0] >= 400:
             db.commit()
-            print(f"Demo data ready. Logins: counsellor / {DEMO_PASSWORD}  and  demo / {DEMO_PASSWORD}")
+            print(f"Demo data ready. Logins: counsellor / {SHOWN_PASSWORD}  and  demo / {SHOWN_PASSWORD}")
             return
         weights = [9, 3, 14, 12, 4, 5, 4, 2, 8]
         for _ in range(400):
@@ -72,7 +80,7 @@ def main():
             db.execute("INSERT INTO callback_requests (ref, payload_enc, province, urgency, created_at) "
                        "VALUES (?, ?, ?, ?, ?)", (ref, v.encrypt_json(payload, f"callback:{ref}"), prov, urg, utcnow()))
         db.commit()
-    print(f"Demo data ready. Logins: counsellor / {DEMO_PASSWORD}  and  demo / {DEMO_PASSWORD}")
+    print(f"Demo data ready. Logins: counsellor / {SHOWN_PASSWORD}  and  demo / {SHOWN_PASSWORD}")
 
 
 if __name__ == "__main__":

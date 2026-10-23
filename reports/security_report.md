@@ -1,6 +1,6 @@
 # Thetha security scan
 
-**21 pass · 1 warn · 0 fail**
+**20 pass · 1 warn · 0 fail**
 
 | Result | Check | Detail |
 |---|---|---|
@@ -12,8 +12,6 @@
 | PASS | `username-blind-index` | usernames stored only as HMAC-SHA256 |
 | PASS | `pii-pattern-scan` | no phone numbers or emails in any column |
 | PASS | `raw-file-scan` | no PII patterns in raw DB file |
-| PASS | `canary` | 'SASSA card again' not present |
-| PASS | `canary` | 'tomatoes' not present |
 | PASS | `secret-key-strength` | 64 chars |
 | WARN | `dev-keys` | instance/dev_keys.json exists; set THETHA_MASTER_KEY/THETHA_SECRET_KEY in production |
 | PASS | `cookie-httponly` | True |
@@ -26,3 +24,4 @@
 | PASS | `header:X-Content-Type-Options` | nosniff |
 | PASS | `header:Referrer-Policy` | no-referrer |
 | PASS | `header:Cache-Control` | no-store, max-age=0 |
+| PASS | `bandit` | no issues in 1243 lines of code |
