@@ -3,7 +3,7 @@
 (function () {
   "use strict";
 
-  // ---------- Quick exit: button or Esc twice ----------
+  // ---------- Quick exit ("Slayza" button) or Esc twice ----------
   function quickExit() {
     try { navigator.sendBeacon("/quick-exit"); } catch (e) { /* ignore */ }
     var log = document.getElementById("log");
@@ -28,8 +28,69 @@
       });
     });
 
+    initStory();
     initChat();
   });
+
+  // ---------- Story: four short animated scenes, Instagram-stories style ----------
+  function initStory() {
+    var story = document.getElementById("story");
+    if (!story) return;
+    var scenes = story.querySelectorAll(".scene");
+    var captions = story.querySelectorAll(".caption");
+    var bars = story.querySelectorAll(".bar");
+    var last = scenes.length - 1;
+    var DURATION = 5000;
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var current = 0, timer = null;
+
+    function remember() { try { sessionStorage.setItem("t_story", "1"); } catch (e) { /* private mode */ } }
+    function seen() { try { return sessionStorage.getItem("t_story") === "1"; } catch (e) { return false; } }
+
+    function show(n) {
+      current = Math.max(0, Math.min(n, last));
+      for (var k = 0; k < scenes.length; k++) {
+        scenes[k].classList.toggle("on", k === current);
+        captions[k].classList.toggle("on", k === current);
+        bars[k].classList.toggle("done", k < current || (reduce && k === current));
+        bars[k].classList.remove("active");
+      }
+      // Re-trigger the CSS animations of the scene that just came on stage.
+      var svg = scenes[current];
+      svg.classList.remove("on"); void svg.getBoundingClientRect(); svg.classList.add("on");
+      if (!reduce) { void bars[current].offsetWidth; bars[current].classList.add("active"); }
+      story.classList.toggle("end", current === last);
+      clearTimeout(timer);
+      if (current === last) { remember(); bars[current].classList.add("done"); }
+      else if (!reduce) timer = setTimeout(function () { show(current + 1); }, DURATION);
+    }
+
+    function collapse(focusChat) {
+      clearTimeout(timer);
+      story.classList.add("collapsed");
+      remember();
+      var input = document.getElementById("message");
+      if (focusChat && input) input.focus();
+    }
+
+    story.querySelector(".tap.next").addEventListener("click", function () { show(current + 1); });
+    story.querySelector(".tap.prev").addEventListener("click", function () { show(current - 1); });
+    document.getElementById("story-skip").addEventListener("click", function () { collapse(true); });
+    document.getElementById("story-start").addEventListener("click", function () { collapse(true); });
+    document.getElementById("story-replay").addEventListener("click", function () {
+      story.classList.remove("collapsed"); show(0);
+    });
+    // Pause while the person is reading (hover) and when the tab is hidden.
+    story.addEventListener("mouseenter", function () { story.classList.add("paused"); clearTimeout(timer); });
+    story.addEventListener("mouseleave", function () {
+      story.classList.remove("paused");
+      if (!reduce && current < last && !story.classList.contains("collapsed")) show(current);
+    });
+    document.addEventListener("visibilitychange", function () { if (document.hidden) clearTimeout(timer); });
+
+    if (seen()) story.classList.add("collapsed");
+    else show(0);
+  }
 
   // ---------- Chat ----------
   function initChat() {
@@ -93,8 +154,11 @@
       log.appendChild(el("div", "msg user", text));
       scroll();
       input.value = "";
-      var typing = el("div", "msg bot typing", "…");
+      var typing = el("div", "msg bot typing");
+      typing.setAttribute("aria-label", "Thetha is typing");
+      for (var d = 0; d < 3; d++) typing.appendChild(el("span"));
       log.appendChild(typing);
+      scroll();
       fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
@@ -119,6 +183,5 @@
     log.addEventListener("click", function (e) {
       if (e.target.classList.contains("chip")) send(e.target.textContent);
     });
-    input.focus();
   }
 })();

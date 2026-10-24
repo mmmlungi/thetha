@@ -4,11 +4,11 @@
 
 | Result | Check | Detail |
 |---|---|---|
-| PASS | `encrypted:users.alias_enc` | 2 rows, all AES-GCM ciphertext |
-| PASS | `encrypted:journal_entries.payload_enc` | 4 rows, all AES-GCM ciphertext |
+| PASS | `encrypted:users.alias_enc` | 3 rows, all AES-GCM ciphertext |
+| PASS | `encrypted:journal_entries.payload_enc` | 7 rows, all AES-GCM ciphertext |
 | PASS | `encrypted:safety_plans.payload_enc` | 1 rows, all AES-GCM ciphertext |
 | PASS | `encrypted:callback_requests.payload_enc` | 3 rows, all AES-GCM ciphertext |
-| PASS | `password-hashing` | 2 scrypt/pbkdf2 hashes |
+| PASS | `password-hashing` | 3 scrypt/pbkdf2 hashes |
 | PASS | `username-blind-index` | usernames stored only as HMAC-SHA256 |
 | PASS | `pii-pattern-scan` | no phone numbers or emails in any column |
 | PASS | `raw-file-scan` | no PII patterns in raw DB file |

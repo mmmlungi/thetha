@@ -246,7 +246,7 @@ def _answer(intent: str, lang: str) -> BotReply:
         return BotReply(
             f"{head}\n\nIf you can't speak, call 10111 and stay on the line, or dial *120*7867# "
             "for the GBV Command Centre. If you can, go to a neighbour or a public place. "
-            "Press Quick Exit (or Esc twice) if someone is coming.",
+            "Tap Slayza (or press Esc twice) if someone is coming.",
             intent, lang, ["Make a safety plan", "Talk to a counsellor"],
             pick("saps", "emergency_mobile", "gbvcc"),
         )

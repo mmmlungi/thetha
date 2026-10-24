@@ -14,7 +14,7 @@ HELPLINES = {
     "gbvcc": {
         "name": "GBV Command Centre",
         "number": "0800 428 428",
-        "note": "Free, 24/7. USSD *120*7867# or SMS 'Help' to 31531",
+        "note": "Toll-free from any cellphone, 24/7. Also USSD *120*7867# or SMS 'Help' to 31531",
     },
     "stop_gbv": {"name": "Stop Gender Violence Helpline", "number": "0800 150 150", "note": "Free, 24/7"},
     "childline": {"name": "Childline", "number": "116", "note": "Free, for children and worried adults"},

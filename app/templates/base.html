@@ -2,18 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#f4eefa" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f0b18" media="(prefers-color-scheme: dark)">
   {# Neutral tab title so it isn't obvious on a shared phone #}
   <title>Thetha · Wellness</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>
 <body>
-  <button id="quick-exit" class="quick-exit" type="button" title="Leave this site now (or press Esc twice)">✕ Quick exit</button>
+  <div class="aurora" aria-hidden="true"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+
   <header class="top">
-    <a class="brand" href="{{ url_for('main.index') }}">Thetha</a>
+    <a class="brand" href="{{ url_for('main.index') }}"><span class="logo" aria-hidden="true"></span>Thetha</a>
     <nav>
       <a href="{{ url_for('main.index') }}">Chat</a>
       <a href="{{ url_for('main.resources') }}">Help lines</a>
@@ -33,14 +36,23 @@
         <a href="{{ url_for('main.login') }}">Log in</a>
       {% endif %}
     </nav>
+    {# Quick exit, labelled "Slayza" so it doesn't announce itself. Esc twice works too. #}
+    <button id="quick-exit" class="slayza" type="button" aria-label="Slayza: quick exit, leave this site now">Slayza</button>
   </header>
-  <div class="emergency-bar">In danger now? Call <a href="tel:10111">10111</a> · <a href="tel:112">112</a> · GBV Command Centre <a href="tel:0800428428">0800 428 428</a></div>
+
+  <div class="emergency-bar">
+    <span class="pulse" aria-hidden="true"></span>
+    <span>In danger now? Call <a href="tel:10111">10111</a> or <a href="tel:112">112</a></span>
+    <span class="sep" aria-hidden="true">·</span>
+    <span>GBV Command Centre <a href="tel:0800428428">0800 428 428</a> <small>(toll-free from any cellphone)</small></span>
+  </div>
+
   <main>
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for cat, msg in messages %}<p class="flash {{ cat }}">{{ msg }}</p>{% endfor %}
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
-  <footer>Thetha does not store your chat messages. Journal, safety plan and contact details are encrypted.</footer>
+  <footer>Made with care in South Africa · Your chat is never saved · Your journal, plan and contact details are encrypted</footer>
 </body>
 </html>

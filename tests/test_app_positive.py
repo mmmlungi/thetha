@@ -10,8 +10,13 @@ pytestmark = pytest.mark.positive
 
 def test_home_page_loads_with_quick_exit_and_emergency_numbers(client):
     html = client.get("/").get_data(as_text=True)
-    assert 'id="quick-exit"' in html
-    assert "10111" in html and "0800 428 428" in html
+    assert 'id="quick-exit"' in html and ">Slayza</button>" in html
+    assert "10111" in html and "0800 428 428" in html and "toll-free from any cellphone" in html
+
+
+def test_login_page_explains_who_has_access(client):
+    html = client.get("/login").get_data(as_text=True)
+    assert "Who can log in?" in html and "never see your journal" in html
 
 
 def test_chat_api_replies(client):

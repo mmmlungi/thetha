@@ -1,27 +1,134 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="chat-card">
-  <div id="log" class="log" aria-live="polite">
-    <div class="msg bot">Hello, I'm Thetha. You are safe to talk here. I don't save what you type.
-You can write in English, isiZulu, isiXhosa, Afrikaans or Sesotho.
-
-Tip: press Quick exit, or Esc twice, to leave instantly.</div>
-    <div class="chips" id="starter-chips">
-      <button class="chip" type="button">I'm being abused</button>
-      <button class="chip" type="button">Is this abuse?</button>
-      <button class="chip" type="button">Check my risk</button>
-      <button class="chip" type="button">Protection order</button>
-      <button class="chip" type="button">Make a safety plan</button>
-      <button class="chip" type="button">Talk to a counsellor</button>
+<div class="home">
+  <section id="story" class="story" aria-label="How Thetha helps" aria-roledescription="story">
+    <div class="bars" aria-hidden="true">
+      <span class="bar"><i></i></span><span class="bar"><i></i></span><span class="bar"><i></i></span><span class="bar"><i></i></span>
     </div>
-  </div>
-  <form id="chat-form" class="chat-form" autocomplete="off">
-    <select id="province" aria-label="Your province (optional)">
-      <option value="">Province (optional)</option>
-      {% for p in provinces %}<option>{{ p }}</option>{% endfor %}
-    </select>
-    <input id="message" maxlength="500" placeholder="Type here…" aria-label="Message" required>
-    <button type="submit">Send</button>
-  </form>
-</section>
+
+    <div class="stage">
+      <svg class="art" viewBox="0 0 320 190" aria-hidden="true">
+        <defs>
+          <linearGradient id="g-brand" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" class="stop-a"/><stop offset="1" class="stop-b"/>
+          </linearGradient>
+          <radialGradient id="g-sun"><stop offset="0" class="stop-sun"/><stop offset="1" class="stop-sun-fade"/></radialGradient>
+        </defs>
+
+        <!-- 1. It starts with one word -->
+        <g class="scene s1">
+          <ellipse class="shadow" cx="110" cy="166" rx="38" ry="6"/>
+          <g class="person">
+            <circle class="fig" cx="110" cy="96" r="17"/>
+            <path class="fig" d="M80 164 q0-44 30-44 q30 0 30 44 z"/>
+          </g>
+          <g class="bubble-g">
+            <rect class="bubble" x="150" y="44" width="116" height="60" rx="22"/>
+            <path class="bubble" d="M166 100 l-14 18 l30 -15 z"/>
+            <circle class="dot d1" cx="184" cy="74" r="6"/>
+            <circle class="dot d2" cx="208" cy="74" r="6"/>
+            <circle class="dot d3" cx="232" cy="74" r="6"/>
+          </g>
+        </g>
+
+        <!-- 2. You will be heard -->
+        <g class="scene s2">
+          <ellipse class="shadow" cx="160" cy="166" rx="110" ry="7"/>
+          <g class="left-fig">
+            <circle class="fig" cx="84" cy="96" r="16"/>
+            <path class="fig" d="M56 164 q0-42 28-42 q28 0 28 42 z"/>
+          </g>
+          <g class="right-fig">
+            <circle class="fig2" cx="236" cy="96" r="16"/>
+            <path class="fig2" d="M208 164 q0-42 28-42 q28 0 28 42 z"/>
+          </g>
+          <circle class="ring r1" cx="160" cy="108" r="22"/>
+          <circle class="ring r2" cx="160" cy="108" r="22"/>
+          <path class="heart" d="M160 124 c-15-11-24-19-24-29 a11 11 0 0 1 24-5 a11 11 0 0 1 24 5 c0 10-9 18-24 29z"/>
+        </g>
+
+        <!-- 3. Together we make a plan -->
+        <g class="scene s3">
+          <circle class="sun-glow" cx="262" cy="72" r="46" fill="url(#g-sun)"/>
+          <g class="sun"><circle class="sun-core" cx="262" cy="72" r="20"/></g>
+          <path class="ground" d="M20 166 H300"/>
+          <g class="house">
+            <path class="fig" d="M36 164 v-36 l26 -22 l26 22 v36 z"/>
+            <rect class="door" x="55" y="140" width="14" height="24" rx="3"/>
+          </g>
+          <path class="path" pathLength="1" d="M92 160 C 140 160, 150 112, 192 116 S 236 98, 246 90"/>
+          <circle class="step st1" cx="128" cy="152" r="3.5"/>
+          <circle class="step st2" cx="168" cy="118" r="3.5"/>
+          <circle class="step st3" cx="214" cy="108" r="3.5"/>
+          <g class="check">
+            <rect class="tick-box" x="108" y="26" width="104" height="58" rx="14"/>
+            <path class="tick t1" pathLength="1" d="M120 44 l5 5 l9 -10"/><rect class="line" x="142" y="40" width="58" height="6" rx="3"/>
+            <path class="tick t2" pathLength="1" d="M120 66 l5 5 l9 -10"/><rect class="line" x="142" y="62" width="44" height="6" rx="3"/>
+          </g>
+        </g>
+
+        <!-- 4. Help is one message away -->
+        <g class="scene s4">
+          <rect class="phone" x="116" y="14" width="88" height="164" rx="18"/>
+          <rect class="notch" x="146" y="22" width="28" height="5" rx="2.5"/>
+          <rect class="pb pb1 pb-in" x="126" y="40" width="54" height="18" rx="9"/>
+          <rect class="pb pb2 pb-out" x="142" y="66" width="52" height="18" rx="9"/>
+          <rect class="pb pb3 pb-in" x="126" y="92" width="62" height="18" rx="9"/>
+          <rect class="pb pb4 pb-out" x="150" y="118" width="44" height="18" rx="9"/>
+          <text class="word w1" x="30" y="52">Sawubona</text>
+          <text class="word w2" x="232" y="44">Molo</text>
+          <text class="word w3" x="22" y="118">Hallo</text>
+          <text class="word w4" x="230" y="112">Dumela</text>
+          <text class="word w5" x="238" y="160">Hello</text>
+        </g>
+      </svg>
+
+      <div class="captions" aria-live="polite">
+        <div class="caption"><span class="kicker">Thetha means “speak”</span><h2>It starts with one word.</h2><p>Type anything, in your own words. Nothing you say here is saved.</p></div>
+        <div class="caption"><span class="kicker">No judgement</span><h2>You will be heard.</h2><p>It's not your fault, and you deserve to feel safe at home.</p></div>
+        <div class="caption"><span class="kicker">Step by step</span><h2>Together, we make a plan.</h2><p>Check your risk, build a safety plan, keep a private record. All of it is encrypted.</p></div>
+        <div class="caption"><span class="kicker">Day or night</span><h2>Help is one message away.</h2><p>In English, isiZulu, isiXhosa, Afrikaans or Sesotho.</p></div>
+      </div>
+
+      <button class="tap prev" type="button" aria-label="Previous"></button>
+      <button class="tap next" type="button" aria-label="Next"></button>
+    </div>
+
+    <div class="story-actions">
+      <button id="story-skip" class="ghost" type="button">Skip</button>
+      <button id="story-start" type="button">Start talking →</button>
+    </div>
+    <button id="story-replay" class="ghost replay" type="button">▶ See how Thetha helps</button>
+  </section>
+
+  <section class="chat-card">
+    <div class="chat-head">
+      <span class="avatar" aria-hidden="true"></span>
+      <div><strong>Thetha</strong><span class="status">Here for you, any time</span></div>
+    </div>
+    <div id="log" class="log" aria-live="polite">
+      <div class="msg bot">Hi, I'm Thetha. This is a safe space to talk, and I won't save what you type.
+
+You can write in English, isiZulu, isiXhosa, Afrikaans or Sesotho. Where would you like to start?
+
+Tip: tap Slayza at the top, or press Esc twice, to leave instantly.</div>
+      <div class="chips" id="starter-chips">
+        <button class="chip" type="button">I'm being abused</button>
+        <button class="chip" type="button">Is this abuse?</button>
+        <button class="chip" type="button">Check my risk</button>
+        <button class="chip" type="button">Protection order</button>
+        <button class="chip" type="button">Make a safety plan</button>
+        <button class="chip" type="button">Talk to a counsellor</button>
+      </div>
+    </div>
+    <form id="chat-form" class="chat-form" autocomplete="off">
+      <select id="province" aria-label="Your province (optional)">
+        <option value="">Province</option>
+        {% for p in provinces %}<option>{{ p }}</option>{% endfor %}
+      </select>
+      <input id="message" maxlength="500" placeholder="Type here, in any language…" aria-label="Message" required>
+      <button type="submit" class="send" aria-label="Send">➤</button>
+    </form>
+  </section>
+</div>
 {% endblock %}

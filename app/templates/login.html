@@ -1,13 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="card narrow">
-  <h1>Log in</h1>
+  <h1>Welcome back</h1>
   <form method="post">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-    <label>Username <input name="username" maxlength="32" required autocomplete="off"></label>
+    <label>Nickname <input name="username" maxlength="32" required autocomplete="off"></label>
     <label>Password <input name="password" type="password" maxlength="128" required></label>
     <button type="submit">Log in</button>
   </form>
-  <p>No account? <a href="{{ url_for('main.register') }}">Create a private one</a>. Use a nickname, not your real name.</p>
+  <p>New here? <a href="{{ url_for('main.register') }}">Create a private account</a>. A nickname is enough.</p>
+</section>
+<section class="card narrow access">
+  <h2>Who can log in?</h2>
+  <div class="who">
+    <span class="who-icon" aria-hidden="true">🌱</span>
+    <p><b>You, if you want to.</b> Anyone can create a free, private account with just a nickname, to keep a journal and a safety plan. <b>You don't need an account to chat.</b></p>
+  </div>
+  <div class="who">
+    <span class="who-icon" aria-hidden="true">🤝</span>
+    <p><b>Trained counsellors.</b> Only the Thetha team can create counsellor accounts. Counsellors see callback requests and anonymous statistics. <b>They can never see your journal or safety plan.</b></p>
+  </div>
 </section>
 {% endblock %}
