@@ -1,4 +1,4 @@
-"""Thetha vulnerability & clear-text storage scanner.
+"""Dudu vulnerability & clear-text storage scanner.
 
 Checks:
   1. Clear-text storage (CWE-312): every sensitive column must hold AES-GCM
@@ -166,7 +166,7 @@ def run(db_path=None, canaries=(), include_code=True, app=None):
 
 def to_markdown(findings) -> str:
     counts = {lvl: sum(f.level == lvl for f in findings) for lvl in ("PASS", "WARN", "FAIL")}
-    lines = ["# Thetha security scan", "",
+    lines = ["# Dudu security scan", "",
              f"**{counts['PASS']} pass · {counts['WARN']} warn · {counts['FAIL']} fail**", "",
              "| Result | Check | Detail |", "|---|---|---|"]
     lines += [f"| {f.level} | `{f.check}` | {f.detail.replace('|', '/')} |" for f in findings]

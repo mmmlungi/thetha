@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#f4eefa" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0f0b18" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f1f8f6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1514" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='favicon-64.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   {# Neutral tab title so it isn't obvious on a shared phone #}
-  <title>Thetha · Wellness</title>
+  <title>Dudu · Wellness</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </head>
@@ -16,7 +19,7 @@
   <div class="aurora" aria-hidden="true"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
 
   <header class="top">
-    <a class="brand" href="{{ url_for('main.index') }}"><span class="logo" aria-hidden="true"></span>Thetha</a>
+    <a class="brand" href="{{ url_for('main.index') }}"><img class="logo" src="{{ url_for('static', filename='logo.png') }}" alt="" width="32" height="32">Dudu</a>
     <nav>
       <a href="{{ url_for('main.index') }}">Chat</a>
       <a href="{{ url_for('main.resources') }}">Help lines</a>

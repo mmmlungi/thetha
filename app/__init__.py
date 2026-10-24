@@ -1,4 +1,4 @@
-"""Thetha - a safe, private GBV support chatbot for South Africa."""
+"""Dudu - a safe, private GBV support chatbot for South Africa."""
 import json
 import os
 import secrets

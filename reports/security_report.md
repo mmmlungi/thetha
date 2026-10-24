@@ -1,4 +1,4 @@
-# Thetha security scan
+# Dudu security scan
 
 **20 pass · 1 warn · 0 fail**
 

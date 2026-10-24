@@ -1,4 +1,4 @@
-"""Thetha conversation engine.
+"""Dudu conversation engine.
 
 Deliberately offline and rule-based:
 * zero running cost (sustainability) and works on a tiny server,
@@ -33,11 +33,11 @@ LANG_MARKERS = {
 
 PHRASES = {
     "greeting": {
-        "en": "Hello, I'm Thetha. You are safe to talk here.",
-        "zu": "Sawubona, ngingu-Thetha. Uphephile ukukhuluma lapha.",
-        "xh": "Molo, ndinguThetha. Ukhuselekile ukuthetha apha.",
-        "af": "Hallo, ek is Thetha. Jy is veilig om hier te praat.",
-        "st": "Dumela, ke nna Thetha. O bolokehile ho bua mona.",
+        "en": "Hello, I'm Dudu. You are safe to talk here.",
+        "zu": "Sawubona, ngingu-Dudu. Uphephile ukukhuluma lapha.",
+        "xh": "Molo, ndinguDudu. Ukhuselekile ukuthetha apha.",
+        "af": "Hallo, ek is Dudu. Jy is veilig om hier te praat.",
+        "st": "Dumela, ke nna Dudu. O bolokehile ho bua mona.",
     },
     "emergency": {
         "en": "If you are in danger right now, call 10111 or 112 immediately.",
@@ -370,7 +370,7 @@ def _answer(intent: str, lang: str) -> BotReply:
     if intent == "journal":
         return BotReply(
             "Keeping a record of each incident (date, what happened, injuries, witnesses) "
-            "makes it much easier to get a protection order or open a case. Thetha's journal "
+            "makes it much easier to get a protection order or open a case. Dudu's journal "
             "is encrypted. Not even our staff can read it, and you can delete it at any time.",
             intent, lang, ["Protection order"], [],
             link={"label": "Open my private journal", "href": "/journal"},

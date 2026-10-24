@@ -1,4 +1,4 @@
-// Thetha front-end. No inline scripts (CSP), and all bot text is rendered with
+// Dudu front-end. No inline scripts (CSP), and all bot text is rendered with
 // textContent, never innerHTML, so it can't inject markup (XSS).
 (function () {
   "use strict";
@@ -155,7 +155,7 @@
       scroll();
       input.value = "";
       var typing = el("div", "msg bot typing");
-      typing.setAttribute("aria-label", "Thetha is typing");
+      typing.setAttribute("aria-label", "Dudu is typing");
       for (var d = 0; d < 3; d++) typing.appendChild(el("span"));
       log.appendChild(typing);
       scroll();

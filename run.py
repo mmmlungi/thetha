@@ -1,4 +1,4 @@
-"""Start Thetha from any folder:  python C:\\Users\\27848\\thetha\\run.py [--seed]"""
+"""Start Dudu from any folder:  python C:\\Users\\27848\\thetha\\run.py [--seed]"""
 import os
 import sys
 import webbrowser
@@ -15,7 +15,7 @@ if __name__ == "__main__":
         seed()
     app = create_app()
     url = "http://127.0.0.1:5000"
-    print(f"\n  Thetha is running at {url}  (Ctrl+C to stop)\n")
+    print(f"\n  Dudu is running at {url}  (Ctrl+C to stop)\n")
     if "--no-browser" not in sys.argv:
         webbrowser.open(url)
     app.run(host="127.0.0.1", port=5000)

@@ -28,7 +28,7 @@ PROTECTION_ORDER_STEPS = [
     "Go to your nearest Magistrate's Court. It is free and you don't need a lawyer.",
     "Ask the clerk for a protection order application under the Domestic Violence Act. "
     "They must help you fill it in.",
-    "Describe what happened, with dates. Your Thetha journal can help you remember.",
+    "Describe what happened, with dates. Your Dudu journal can help you remember.",
     "A magistrate can grant an interim protection order the same day if you are in danger.",
     "The sheriff or police serve the order on the abuser. You get a return date for the final order.",
     "A suspended warrant of arrest comes with the order. If they break it, call the police "

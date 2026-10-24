@@ -1,12 +1,12 @@
-﻿# Thetha: a safe, private GBV support chatbot for South Africa
+# Dudu: a safe, private GBV support chatbot for South Africa
 
-*Thetha* means "speak" in isiZulu and isiXhosa.
+*Dudu* comes from *duduza*, "to comfort" in isiZulu and isiXhosa. Its colours are taken from its logo: teal for connection, warm orange for compassion and green for hope.
 
 ## 1. The need
 
 South Africa has one of the highest rates of gender-based violence in the world. Our community research points to four practical barriers that stop survivors from getting help:
 
-| Need / want in the community | What gets in the way | What Thetha does |
+| Need / want in the community | What gets in the way | What Dudu does |
 |---|---|---|
 | "I don't know if what's happening to me counts as abuse." | Emotional, financial and online abuse aren't widely understood as abuse. | Explains the Domestic Violence Act in plain language. |
 | "I don't know where to start: police, court, clinic?" | Information is scattered and full of legal jargon. | Step-by-step guides: protection orders, opening a case, PEP within 72 hours after rape. |
@@ -26,11 +26,11 @@ South Africa has one of the highest rates of gender-based violence in the world.
 
 ## 3. Mapping to the judging criteria
 
-| Criterion | How Thetha meets it |
+| Criterion | How Dudu meets it |
 |---|---|
 | **Product** | Working web app: chat, risk check, journal, safety plan, callbacks, counsellor dashboard, data export and erasure. |
 | **Creativity** | A discreet "Slayza" quick-exit button, an animated four-scene story told in illustrations, liquid-glass design, neutral tab and cookie names, a code word in the safety plan, and voicemail preference for callbacks. All are designed around the abuser's phone as the threat. |
-| **Usability** | Warm, human copy; a skippable story that explains Thetha in 20 seconds; quick-reply buttons, five languages, typo tolerance, works on small phones, light and dark mode, no app install, very little data used. |
+| **Usability** | Warm, human copy; a skippable story that explains Dudu in 20 seconds; quick-reply buttons, five languages, typo tolerance, works on small phones, light and dark mode, no app install, very little data used. |
 | **Sustainability** | No AI API costs: the rule-based engine runs on a tiny server. Open, testable code that NGOs can host themselves. Automatic data purging keeps storage small. |
 | **Impact** | Turns confusion into concrete steps (court, police, clinic within 72 hours). Anonymous statistics show NGOs which needs and provinces are growing. |
 | **Presentation** | Live demo script below. Security report and test results generated automatically. |
@@ -144,4 +144,4 @@ To update later: `cd ~/thetha && git pull`, then press **Reload**. Free web apps
 - Redis-backed rate limiting and Postgres when running more than one server.
 - Partnerships with the GBV Command Centre and NGOs. **Verify all helpline numbers with each organisation before launch.**
 
-> Thetha gives information and support. It doesn't replace police, medical or legal professionals.
+> Dudu gives information and support. It doesn't replace police, medical or legal professionals.
