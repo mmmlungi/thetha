@@ -30,7 +30,129 @@
 
     initStory();
     initChat();
+    initJournalForm();
+    document.querySelectorAll(".reveal").forEach(function (b) {
+      b.addEventListener("click", function () { b.classList.toggle("shown"); });
+    });
+    var printBtn = document.getElementById("print-btn");
+    if (printBtn) printBtn.addEventListener("click", function () { window.print(); });
+    initInstall();
   });
+
+  // ---------- Installable app: offline page + "Add to home screen" ----------
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function () { /* site still works without it */ });
+    });
+  }
+  function initInstall() {
+    var bar = document.getElementById("install-bar"), btn = document.getElementById("install-btn"), prompt = null;
+    if (!bar || !btn) return;
+    window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); prompt = e; bar.hidden = false; });
+    btn.addEventListener("click", function () {
+      if (!prompt) return;
+      prompt.prompt();
+      prompt = null;
+      bar.hidden = true;
+    });
+    window.addEventListener("appinstalled", function () { bar.hidden = true; });
+  }
+
+  // ---------- Journal: workplace details, attachments and voice notes ----------
+  function initJournalForm() {
+    var form = document.getElementById("journal-form");
+    if (!form) return;
+    var setting = document.getElementById("setting");
+    var work = document.getElementById("workplace-fields");
+    function syncWork() { work.hidden = setting.value !== "workplace"; }
+    setting.addEventListener("change", syncWork);
+    syncWork();
+
+    var input = document.getElementById("media-input");
+    var list = document.getElementById("attach-list");
+    var canCombine = typeof DataTransfer === "function";
+    var picked = [];
+
+    function el(tag, cls, text) {
+      var n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text !== undefined) n.textContent = text;
+      return n;
+    }
+    function size(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; }
+    function render() {
+      list.textContent = "";
+      picked.forEach(function (f, i) {
+        var li = el("li", "attach-item");
+        var url = URL.createObjectURL(f);
+        if (f.type.indexOf("image/") === 0) { var img = el("img", "thumb"); img.src = url; img.alt = ""; li.appendChild(img); }
+        else if (f.type.indexOf("audio/") === 0) { var au = el("audio"); au.controls = true; au.src = url; li.appendChild(au); }
+        else li.appendChild(el("span", "thumb-icon", f.type.indexOf("video/") === 0 ? "🎬" : "📎"));
+        li.appendChild(el("span", "attach-name", f.name + " · " + size(f.size)));
+        var rm = el("button", "link", "Remove");
+        rm.type = "button";
+        rm.addEventListener("click", function () { picked.splice(i, 1); sync(); });
+        li.appendChild(rm);
+        list.appendChild(li);
+      });
+    }
+    function sync() {
+      if (canCombine) {
+        var dt = new DataTransfer();
+        picked.forEach(function (f) { dt.items.add(f); });
+        input.files = dt.files;
+      }
+      render();
+    }
+    input.addEventListener("change", function () {
+      if (!canCombine) { picked = Array.prototype.slice.call(input.files); render(); return; }
+      Array.prototype.forEach.call(input.files, function (f) {
+        if (!picked.some(function (p) { return p.name === f.name && p.size === f.size; })) picked.push(f);
+      });
+      sync();
+    });
+
+    // Voice notes, recorded in the browser and attached like any other file.
+    var recBtn = document.getElementById("record-btn"), box = document.getElementById("recorder");
+    var timeEl = document.getElementById("rec-time");
+    if (!(navigator.mediaDevices && window.MediaRecorder && canCombine)) { recBtn.hidden = true; return; }
+    var rec = null, stream = null, chunks = [], timer = null, cancelled = false;
+    recBtn.addEventListener("click", function () {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
+        stream = s; chunks = []; cancelled = false;
+        var types = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm", "audio/ogg"];
+        var type = types.filter(function (t) { return MediaRecorder.isTypeSupported(t); })[0];
+        rec = type ? new MediaRecorder(s, { mimeType: type }) : new MediaRecorder(s);
+        rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop = function () {
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          clearInterval(timer);
+          box.hidden = true; recBtn.hidden = false;
+          if (cancelled || !chunks.length) return;
+          var mime = (rec.mimeType || "audio/webm").split(";")[0];
+          var ext = mime.indexOf("mp4") > -1 ? "m4a" : mime.indexOf("ogg") > -1 ? "ogg" : "webm";
+          var stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+          picked.push(new File(chunks, "voice-note-" + stamp + "." + ext, { type: mime }));
+          sync();
+        };
+        var started = Date.now();
+        rec.start(1000);
+        box.hidden = false; recBtn.hidden = true; timeEl.textContent = "0:00";
+        timer = setInterval(function () {
+          var sec = Math.floor((Date.now() - started) / 1000);
+          timeEl.textContent = Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+          if (sec >= 600) rec.stop();  // 10 minutes max
+        }, 500);
+      }).catch(function () {
+        window.alert("Dudu couldn't use the microphone. Please allow it in your browser settings and try again.");
+      });
+    });
+    document.getElementById("rec-stop").addEventListener("click", function () { if (rec && rec.state !== "inactive") rec.stop(); });
+    document.getElementById("rec-cancel").addEventListener("click", function () {
+      cancelled = true;
+      if (rec && rec.state !== "inactive") rec.stop();
+    });
+  }
 
   // ---------- Story: four short animated scenes, Instagram-stories style ----------
   function initStory() {

@@ -21,6 +21,10 @@ South Africa has one of the highest rates of gender-based violence in the world.
 - **Danger assessment**: 6 yes/no questions weighted by lethality research (prior strangulation alone means high risk). It gives a low, medium or high result with next steps.
 - **Safety override**: a message like "he has a knife" or "I want to die" gets police or crisis numbers immediately, even in the middle of another conversation.
 - **Encrypted journal and safety plan** for survivors with an anonymous account (nickname only, no email or phone needed).
+- **Evidence in the journal**: photos, videos and voice notes recorded right in the browser. Every file is encrypted, checked by its real contents (a renamed `.exe` or an `.svg` is refused), and given a **SHA-256 fingerprint** so a court can check it hasn't been changed. Injury photos stay blurred until the person taps to look.
+- **Workplace incidents**: choose "Workplace" and record the employer, the person's role, whether it was reported to HR, a union or the CCMA, the reference number and the impact on work. The chatbot explains workplace harassment rights and the Protection from Harassment Act.
+- **Printable exports**: a **PDF report** (incidents in date order, photos embedded, fingerprints listed), a **printable page** (or "Save as PDF" on a phone), and a **ZIP evidence pack** with the original files. The safety plan is deliberately left out of these, because court papers are shown to the other side.
+- **Installable app (PWA)**: add Dudu to the home screen on Android, iPhone, iPad, Windows, Mac and Chromebook. It opens full screen like an app, and offline it still shows the emergency numbers.
 - **Safe callback requests**, plus a **counsellor dashboard** with an audit trail.
 - **POPIA rights**: download all my data, and permanently delete everything.
 
@@ -28,7 +32,7 @@ South Africa has one of the highest rates of gender-based violence in the world.
 
 | Criterion | How Dudu meets it |
 |---|---|
-| **Product** | Working web app: chat, risk check, journal, safety plan, callbacks, counsellor dashboard, data export and erasure. |
+| **Product** | Working web app, installable on any phone: chat, risk check, journal with photo, video and voice evidence, workplace incidents, safety plan, callbacks, counsellor dashboard, PDF and print exports, data erasure. |
 | **Creativity** | A discreet "Slayza" quick-exit button, an animated four-scene story told in illustrations, liquid-glass design, neutral tab and cookie names, a code word in the safety plan, and voicemail preference for callbacks. All are designed around the abuser's phone as the threat. |
 | **Usability** | Warm, human copy; a skippable story that explains Dudu in 20 seconds; quick-reply buttons, five languages, typo tolerance, works on small phones, light and dark mode, no app install, very little data used. |
 | **Sustainability** | No AI API costs: the rule-based engine runs on a tiny server. Open, testable code that NGOs can host themselves. Automatic data purging keeps storage small. |
@@ -43,6 +47,7 @@ South Africa has one of the highest rates of gender-based violence in the world.
 | Data | How it's stored |
 |---|---|
 | Journal entries, safety plans | AES-256-GCM, bound to the user ID (a row copied to another user fails to decrypt) |
+| Photos, videos, voice notes | AES-256-GCM files on disk, bound to owner and file name; original name, type and SHA-256 encrypted in the database |
 | Callback name, phone number, notes | AES-256-GCM, bound to the request reference |
 | Username | Only an HMAC-SHA256 *blind index*; the display name is encrypted |
 | Password | scrypt hash |
@@ -52,7 +57,7 @@ Keys come from environment variables. The app **refuses to start in production w
 
 ### Other controls
 
-CSRF tokens Â· strict Content Security Policy (no inline scripts) Â· XSS-safe rendering Â· parameterised SQL Â· rate limiting Â· account lockout after 5 failures Â· same error message for wrong username or password (no user enumeration) Â· session-fixation protection Â· open-redirect protection Â· authorisation checks so users can't access each other's records Â· 15-minute sessions Â· HttpOnly/SameSite=Strict/Secure cookies Â· `Cache-Control: no-store` Â· phone numbers and emails redacted from logs Â· 64 KB request limit Â· audit log.
+CSRF tokens · strict Content Security Policy (no inline scripts) · XSS-safe rendering · parameterised SQL · rate limiting · account lockout after 5 failures · same error message for wrong username or password (no user enumeration) · session-fixation protection · open-redirect protection · authorisation checks so users can't access each other's records · 15-minute sessions · HttpOnly/SameSite=Strict/Secure cookies · `Cache-Control: no-store` · phone numbers and emails redacted from logs · 64 KB request limit · audit log.
 
 ### Vulnerability scan
 
@@ -63,6 +68,7 @@ python tools/security_scan.py --canary "some secret text"
 The scan checks:
 - that every sensitive column holds ciphertext;
 - that no phone numbers or emails appear anywhere in the database, including the raw file's freed pages;
+- that every evidence file on disk is encrypted (no readable photo, video or audio);
 - password hashing, cookie flags, secret strength and security headers;
 - **Bandit** static analysis.
 
@@ -71,9 +77,9 @@ It writes `reports/security_report.md` and exits with code 1 on failure, so it c
 ## 5. Testing: positive and negative
 
 ```bash
-python -m pytest              # all 133 tests
-python -m pytest -m positive  # 56: valid use works
-python -m pytest -m negative  # 77: bad, malicious or unauthorised input is rejected
+python -m pytest              # all 176 tests
+python -m pytest -m positive  # 72: valid use works
+python -m pytest -m negative  # 104: bad, malicious or unauthorised input is rejected
 python -m pytest -m security  # 25: encryption-at-rest and vulnerability checks
 ```
 
@@ -87,6 +93,9 @@ python -m pytest -m security  # 25: encryption-at-rest and vulnerability checks
 | Scanner passes on a clean database | Scanner **catches planted clear text**, plain passwords and phone numbers |
 | Encrypt/decrypt round trip | Tampered ciphertext, wrong key, swapped rows and malformed tokens are rejected |
 | Security headers and cookie flags present | Missing or forged CSRF token, SQL injection, XSS, open redirect, rate-limit abuse, lockout, oversized body, production start without keys |
+| Photo, video and voice note saved, encrypted, playable | SVG, HTML, `.exe` or PDF disguised as a photo is refused; nothing is stored |
+| PDF, printable page and ZIP with matching fingerprints | Another user can't open or delete my files; a tampered or swapped file is refused |
+| Workplace details saved and printed | Oversized files, too many files and a full quota are refused |
 
 ## 6. Run it
 
@@ -110,33 +119,58 @@ Production: set `THETHA_ENV=production`, `THETHA_SECRET_KEY` and `THETHA_MASTER_
 ### Free hosting on PythonAnywhere
 
 1. Sign up for a free **Beginner** account at pythonanywhere.com.
-2. **Consoles â†’ Bash**, then run:
+2. **Consoles → Bash**, then run:
    ```bash
    git clone https://github.com/mmmlungi/thetha.git
    bash ~/thetha/deploy/pythonanywhere_setup.sh --demo
    ```
    With `--demo` you choose a private password for the `demo` and `counsellor` accounts. The README password is refused in production.
    **Back up `~/.thetha_keys`**: if it's lost, the encrypted data can never be read again.
-3. **Web â†’ Add a new web app â†’ Manual configuration**, and pick the Python version the script printed.
+3. **Web → Add a new web app → Manual configuration**, and pick the Python version the script printed.
 4. In the Web tab:
    - Open the **WSGI configuration file** link and replace its contents with `deploy/pythonanywhere_wsgi.py`.
-   - Under **Static files**, add URL `/static/` â†’ directory `/home/<username>/thetha/app/static`.
+   - Under **Static files**, add URL `/static/` → directory `/home/<username>/thetha/app/static`.
    - Turn on **Force HTTPS**.
    - Press **Reload**.
 5. Open `https://<username>.pythonanywhere.com`.
 
-To update later: `cd ~/thetha && git pull`, then press **Reload**. Free web apps must be extended in the Web tab every 3 months.
+To update later:
+```bash
+cd ~/thetha && git pull
+python3.13 -m pip install --user -r requirements.txt   # use the Python version your web app uses
+```
+then press **Reload**. Free web apps must be extended in the Web tab every 3 months.
+
+Evidence files are stored in `~/thetha-data/media`, next to the database and outside the code. The free plan has 512 MB of disk in total, so each person's evidence is capped at 150 MB (change `MEDIA_USER_QUOTA` in `app/__init__.py`).
 
 ## 7. Suggested 5-minute demo
 
 1. **The problem** (30s): the barriers in section 1.
-2. **Chat** (90s): type `Sawubona ngiyashaywa` â†’ *Check my risk* â†’ answer *yes* to strangulation â†’ high-risk result. Then type `he has a knife` and police numbers appear first.
+2. **Chat** (90s): type `Sawubona ngiyashaywa` → *Check my risk* → answer *yes* to strangulation → high-risk result. Then type `he has a knife` and police numbers appear first.
 3. **Slayza** (15s): tap Slayza or press Esc twice and the browser jumps to a weather search.
-4. **Journal** (45s): log in as `demo`, add an entry, then show in a database viewer that it is unreadable ciphertext.
+4. **Journal** (60s): log in as `demo`. Open the workplace entry and tap the blurred screenshot. Record a 5-second voice note and save it. Then go to *My data* and download the PDF report.
 5. **Counsellor** (45s): request a callback, log in as `counsellor`, show the decrypted number and the anonymous province statistics.
 6. **Proof** (60s): run `pytest -m negative` and `tools/security_scan.py` live.
 
-## 8. Roadmap
+## 8. Phones, tablets and app stores
+
+Dudu is a **Progressive Web App (PWA)**: one codebase that runs in any modern browser and can be installed like an app.
+
+| Platform | How people get it |
+|---|---|
+| Android (Samsung, Xiaomi, Oppo and others) | Open the site in Chrome, then tap **Add Dudu to your home screen** (or ⋮ → *Install app*) |
+| iPhone and iPad | Open in Safari → **Share** → **Add to Home Screen** |
+| Huawei (no Google services) | Open in Huawei Browser → menu → **Add to home screen** |
+| Windows, Mac, Chromebook | Chrome or Edge: install icon in the address bar |
+
+Store listings, if needed later, can reuse the same site without rewriting the app:
+- **Google Play**: wrap the PWA as a Trusted Web Activity with PWABuilder or Bubblewrap ($25 one-off developer fee).
+- **Huawei AppGallery**: the same Android package, built with the WebView fallback.
+- **Apple App Store**: wrap with Capacitor. It needs a Mac, a $99 a year developer account, and extra native features, because Apple often rejects apps that are only a website.
+
+Privacy note: an installed icon is visible on the home screen. People who share a phone with an abuser may prefer to use Dudu in the browser instead.
+
+## 9. Roadmap
 
 - WhatsApp and USSD channels for users with no data or basic phones.
 - Translations reviewed by native speakers. Current non-English phrases are short and **must be checked before launch**.

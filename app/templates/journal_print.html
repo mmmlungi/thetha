@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="no-print print-bar card">
+  <p>This page is ready to print. On a phone, choose <b>Print</b> and then <b>Save as PDF</b>.</p>
+  <button type="button" id="print-btn">🖨 Print or save as PDF</button>
+  <a href="{{ url_for('main.my_data') }}">Back</a>
+</div>
+<article class="print-doc">
+  <h1>Incident record</h1>
+  <p class="print-meta">Kept by: {{ alias }} · Generated: {{ generated }} · Incidents: {{ entries|length }}</p>
+  <p class="print-meta">Written privately and stored encrypted in the Dudu app. Attached files show a SHA-256 fingerprint, taken at upload, so anyone can check they haven't been changed.</p>
+  {% for e in entries %}
+    <section class="print-entry">
+      <h2>{{ loop.index }}. {{ e.date }} — {{ e.type|capitalize }}{% if e.setting %} ({{ e.setting }}){% endif %}</h2>
+      <p class="pre">{{ e.description }}</p>
+      <dl>
+        {% for key, label in [('location','Place'), ('injuries','Injuries'), ('witnesses','Witnesses')] %}
+          {% if e[key] %}<dt>{{ label }}</dt><dd>{{ e[key] }}</dd>{% endif %}
+        {% endfor %}
+        {% if e.setting == 'workplace' %}
+          {% for key, label in [('employer','Employer'), ('perpetrator_role','Their role'), ('reported','Reported'), ('report_ref','Reference number'), ('work_impact','Impact on work')] %}
+            {% if e[key] %}<dt>{{ label }}</dt><dd>{{ e[key] }}</dd>{% endif %}
+          {% endfor %}
+        {% endif %}
+      </dl>
+      {% for m in e.media %}
+        <figure class="print-file">
+          {% if m.kind == 'image' and not m.broken %}<img src="{{ url_for('main.journal_media', media_id=m.id) }}" alt="Evidence photo {{ m.name }}">{% endif %}
+          <figcaption>{{ {'image': 'Photo', 'video': 'Video', 'audio': 'Voice note'}[m.kind] }}: {{ m.name }}<br><code>SHA-256 {{ m.sha256 }}</code></figcaption>
+        </figure>
+      {% endfor %}
+      <p class="print-small">Recorded in Dudu: {{ e.created_at }}</p>
+    </section>
+  {% else %}
+    <p>No incidents recorded yet.</p>
+  {% endfor %}
+</article>
+{% endblock %}

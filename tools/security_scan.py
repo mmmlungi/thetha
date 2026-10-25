@@ -27,6 +27,7 @@ sys.path.insert(0, ROOT)
 
 from app.crypto import looks_encrypted  # noqa: E402
 from app.db import SENSITIVE_COLUMNS  # noqa: E402
+from app.media import MAGIC as MEDIA_MAGIC, sniff  # noqa: E402
 
 PHONE = re.compile(r"(?<![\w])(?:\+27|0)\d{2}[\s-]?\d{3}[\s-]?\d{4}(?![\w])")
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[A-Za-z]{2,}")
@@ -154,11 +155,32 @@ def scan_code() -> list[Finding]:
     return out
 
 
+def scan_media_files(media_dir: str, canaries=()) -> list[Finding]:
+    """Every evidence file on disk must be a Dudu-encrypted blob, never a readable photo/video/audio."""
+    if not os.path.isdir(media_dir):
+        return [Finding("PASS", "media-encrypted", "no evidence files stored yet")]
+    plain, total = [], 0
+    for name in os.listdir(media_dir):
+        path = os.path.join(media_dir, name)
+        if not os.path.isfile(path):
+            continue
+        total += 1
+        with open(path, "rb") as fh:
+            blob = fh.read()
+        readable = sniff(blob[:32]) is not None
+        if not blob.startswith(MEDIA_MAGIC) or readable or any(c.encode("utf-8") in blob for c in canaries):
+            plain.append(name)
+    if plain:
+        return [Finding("FAIL", "media-encrypted", f"{len(plain)} of {total} files readable: {plain[:5]}")]
+    return [Finding("PASS", "media-encrypted", f"{total} evidence files, all AES-GCM encrypted")]
+
+
 def run(db_path=None, canaries=(), include_code=True, app=None):
     from app import create_app
     app = app or create_app()
     db_path = db_path or app.config["DATABASE"]
-    findings = scan_cleartext(db_path, canaries) + scan_config(app) + scan_headers(app)
+    findings = scan_cleartext(db_path, canaries) + scan_media_files(app.config["MEDIA_DIR"], canaries)
+    findings += scan_config(app) + scan_headers(app)
     if include_code:
         findings += scan_code()
     return findings

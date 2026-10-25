@@ -117,6 +117,12 @@ INTENTS = {
         "tracking my phone": 4, "revenge porn": 4, "sextortion": 4, "cyber*": 2, "whatsapp": 1,
         "facebook": 1, "tiktok": 1, "instagram": 1,
     },
+    "workplace": {
+        "at work": 3, "workplace": 4, "my boss": 3, "my manager": 3, "my supervisor": 3, "colleague": 3,
+        "colleagues": 3, "coworker": 3, "co worker": 3, "my employer": 3, "sexual harassment": 4,
+        "harass*": 2, "hr": 2, "human resources": 3, "office": 1, "my job": 2, "fired": 1, "ccma": 3,
+        "emsebenzini": 3, "umphathi": 3, "by die werk": 3, "my baas": 3, "mosebetsing": 3,
+    },
     "help_someone": {
         "my friend": 3, "my sister": 3, "my mother": 3, "my mom": 3, "my neighbour": 3,
         "my neighbor": 3, "someone i know": 3, "my cousin": 3, "my colleague": 3,
@@ -155,8 +161,8 @@ RISK_QUESTIONS = [
 ]
 HIGH_RISK, MEDIUM_RISK = 6, 3
 
-MENU = ["I'm being abused", "Protection order", "Make a safety plan", "Check my risk",
-        "Talk to a counsellor", "Is this abuse?"]
+MENU = ["I'm being abused", "Harassment at work", "Protection order", "Make a safety plan",
+        "Check my risk", "Talk to a counsellor", "Is this abuse?"]
 
 
 @dataclass
@@ -282,7 +288,9 @@ def _answer(intent: str, lang: str) -> BotReply:
         steps = "\n".join(f"{i}. {s}" for i, s in enumerate(PROTECTION_ORDER_STEPS, 1))
         return BotReply(
             f"A protection order is a court order that tells the abuser to stop. "
-            f"Here's how to get one:\n\n{steps}",
+            f"Here's how to get one:\n\n{steps}\n\nIf the person isn't a partner or family member "
+            f"(for example a colleague, boss or neighbour), ask for a protection order under the "
+            f"Protection from Harassment Act instead. The steps are much the same.",
             intent, lang, ["Keep evidence", "Report to police", "Legal help"], pick("legal_aid", "gbvcc"),
         )
     if intent == "report_police":
@@ -357,6 +365,21 @@ def _answer(intent: str, lang: str) -> BotReply:
             "location-sharing and apps you don't recognise. You can report it at the police and "
             "ask the platform to remove the content.",
             intent, lang, ["Keep evidence", "Report to police", "Protection order"], pick("saps", "gbvcc"),
+        )
+    if intent == "workplace":
+        return BotReply(
+            "Harassment at work is never part of the job, and it's not your fault.\n\nWhat you can do:\n"
+            "- Keep a record of every incident in your journal and choose \"Workplace\". Add the date, "
+            "what was said or done, who saw it, and any messages or photos.\n"
+            "- Report it in writing to HR, a manager you trust, or your union. Your employer must act on "
+            "harassment, and may not punish you for reporting it.\n"
+            "- If your employer doesn't act, you can take it to the CCMA.\n"
+            "- You can get a protection order against anyone who harasses you, including a boss or "
+            "colleague, under the Protection from Harassment Act. Ask at the Magistrate's Court.\n"
+            "- Sexual assault at work is a crime. You can report it to the police.",
+            intent, lang, ["Keep evidence", "Protection order", "Talk to a counsellor"],
+            pick("ccma", "legal_aid", "gbvcc"),
+            link={"label": "Record a workplace incident", "href": "/journal"},
         )
     if intent == "help_someone":
         return BotReply(

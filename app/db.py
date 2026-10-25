@@ -1,4 +1,4 @@
-﻿"""SQLite data layer.
+"""SQLite data layer.
 
 Data-management principles (aligned with POPIA):
 * Minimisation  - chat messages are never stored; only an anonymous event
@@ -61,6 +61,16 @@ CREATE TABLE IF NOT EXISTS chat_events (
     province    TEXT
 );
 
+CREATE TABLE IF NOT EXISTS journal_media (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    entry_id    INTEGER NOT NULL REFERENCES journal_entries(id) ON DELETE CASCADE,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    stored_name TEXT    NOT NULL UNIQUE,         -- random name of the encrypted file on disk
+    size        INTEGER NOT NULL,                -- for the storage quota
+    meta_enc    TEXT    NOT NULL,                -- encrypted: original name, type, SHA-256
+    created_at  TEXT    NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS audit_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     at          TEXT NOT NULL,
@@ -76,6 +86,7 @@ SENSITIVE_COLUMNS = [
     ("journal_entries", "payload_enc", "id"),
     ("safety_plans", "payload_enc", "user_id"),
     ("callback_requests", "payload_enc", "id"),
+    ("journal_media", "meta_enc", "id"),
 ]
 
 
@@ -127,7 +138,9 @@ def purge_expired(retention_days: int, event_days: int) -> dict:
     ).rowcount
     ev = db.execute("DELETE FROM chat_events WHERE day < ?", (ev_cutoff,)).rowcount
     db.commit()
-    return {"callbacks": cb, "events": ev}
+    from .media import remove_orphans
+    known = {r[0] for r in db.execute("SELECT stored_name FROM journal_media")}
+    return {"callbacks": cb, "events": ev, "orphan_files": remove_orphans(known)}
 
 
 @click.command("init-db")
@@ -143,7 +156,8 @@ def purge_command():
     result = purge_expired(
         current_app.config["CALLBACK_RETENTION_DAYS"], current_app.config["EVENT_RETENTION_DAYS"]
     )
-    click.echo(f"Purged {result['callbacks']} closed callbacks and {result['events']} old events.")
+    click.echo(f"Purged {result['callbacks']} closed callbacks, {result['events']} old events "
+               f"and {result['orphan_files']} orphaned files.")
 
 
 def init_app(app):

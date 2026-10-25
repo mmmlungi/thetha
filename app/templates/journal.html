@@ -2,36 +2,122 @@
 {% block content %}
 <section class="card">
   <h1>My private journal</h1>
-  <p class="muted">Record what happened. It can help with a protection order or police case. Everything here is encrypted with AES-256. Only you can read it.</p>
-  <form method="post" class="grid">
+  <p class="muted">Write down what happened, in your own words. Add photos, videos or voice notes if you have them. Everything is encrypted with AES-256, and only you can open it. A record like this can help with a protection order, a police case or a complaint at work.</p>
+
+  <form method="post" enctype="multipart/form-data" class="grid" id="journal-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-    <label>Date it happened <input type="date" name="date" required></label>
-    <label>Type
-      <select name="type" required>{% for t in types %}<option value="{{ t }}">{{ t|capitalize }}</option>{% endfor %}</select>
+    <label>Date it happened <input type="date" name="date" value="{{ form.date }}" required></label>
+    <label>Where did it happen?
+      <select name="setting" id="setting">
+        {% for s in settings %}<option value="{{ s }}" {% if form.setting == s %}selected{% endif %}>{{ s|capitalize }}</option>{% endfor %}
+      </select>
     </label>
-    <label class="full">What happened <textarea name="description" maxlength="4000" required rows="4"></textarea></label>
-    <label>Where <input name="location" maxlength="200"></label>
-    <label>Injuries <input name="injuries" maxlength="1000"></label>
-    <label class="full">Witnesses <input name="witnesses" maxlength="500"></label>
+    <label>What kind of harm?
+      <select name="type" required>{% for t in types %}<option value="{{ t }}" {% if form.type == t %}selected{% endif %}>{{ t|capitalize }}</option>{% endfor %}</select>
+    </label>
+    <label>Place (optional) <input name="location" maxlength="200" value="{{ form.location }}" placeholder="e.g. kitchen, office, taxi rank"></label>
+    <label class="full">What happened <textarea name="description" maxlength="4000" required rows="4" placeholder="Take your time. Write it the way you remember it.">{{ form.description }}</textarea></label>
+    <label>Injuries (optional) <input name="injuries" maxlength="1000" value="{{ form.injuries }}"></label>
+    <label>Witnesses (optional) <input name="witnesses" maxlength="500" value="{{ form.witnesses }}"></label>
+
+    <fieldset class="full workplace" id="workplace-fields" {% if form.setting != 'workplace' %}hidden{% endif %}>
+      <legend>💼 At work</legend>
+      <p class="muted small-print">This helps if you report to HR, your union, the CCMA or a court. Only fill in what you're comfortable with.</p>
+      <div class="grid">
+        <label>Employer or company <input name="employer" maxlength="120" value="{{ form.employer }}"></label>
+        <label>Their role
+          <select name="perpetrator_role">
+            <option value="">Choose…</option>
+            {% for r in roles %}<option value="{{ r }}" {% if form.perpetrator_role == r %}selected{% endif %}>{{ r|capitalize }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Have you reported it?
+          <select name="reported">{% for r in reported %}<option value="{{ r }}" {% if form.reported == r %}selected{% endif %}>{{ r|capitalize }}</option>{% endfor %}</select>
+        </label>
+        <label>Reference or case number <input name="report_ref" maxlength="80" value="{{ form.report_ref }}"></label>
+        <label class="full">Impact on your work <textarea name="work_impact" maxlength="1000" rows="2" placeholder="e.g. missed shifts, moved to another post, threatened with losing my job">{{ form.work_impact }}</textarea></label>
+      </div>
+    </fieldset>
+
+    <div class="full attach">
+      <span class="attach-title">Evidence (optional)</span>
+      <div class="attach-buttons">
+        <label class="pill-btn p-blue">📷 Photo or video
+          <input type="file" id="media-input" name="media" multiple accept="image/*,video/*,audio/*" class="visually-hidden">
+        </label>
+        <button type="button" class="pill-btn p-rose" id="record-btn">🎙 Record a voice note</button>
+      </div>
+      <div class="recorder" id="recorder" hidden>
+        <span class="rec-dot" aria-hidden="true"></span><span id="rec-time">0:00</span>
+        <button type="button" class="small" id="rec-stop">Stop and attach</button>
+        <button type="button" class="small ghost" id="rec-cancel">Cancel</button>
+      </div>
+      <ul class="attach-list" id="attach-list" aria-live="polite"></ul>
+      <p class="muted small-print">Up to {{ max_files }} files per entry: photos up to 10 MB, voice notes up to 20 MB, videos up to 50 MB. Using {{ storage|filesize }} of {{ quota|filesize }}.</p>
+    </div>
+
     <button type="submit">Save encrypted entry</button>
   </form>
 </section>
+
 <section class="card">
-  <h2>Entries ({{ entries|length }})</h2>
+  <div class="row-between">
+    <h2>Entries ({{ entries|length }})</h2>
+    {% if entries %}<a class="button p-lav" href="{{ url_for('main.my_data') }}">⬇ Download or print</a>{% endif %}
+  </div>
   {% for e in entries %}
     <article class="entry">
-      <header><strong>{{ e.date }}</strong> · <span class="tag">{{ e.type }}</span></header>
+      <header>
+        <strong>{{ e.date }}</strong> · <span class="tag">{{ e.type }}</span>
+        {% if e.setting %}<span class="tag tag-setting">{{ e.setting }}</span>{% endif %}
+      </header>
       <p class="pre">{{ e.description }}</p>
-      {% if e.location %}<p><b>Where:</b> {{ e.location }}</p>{% endif %}
+      {% if e.location %}<p><b>Place:</b> {{ e.location }}</p>{% endif %}
       {% if e.injuries %}<p><b>Injuries:</b> {{ e.injuries }}</p>{% endif %}
       {% if e.witnesses %}<p><b>Witnesses:</b> {{ e.witnesses }}</p>{% endif %}
+      {% if e.setting == 'workplace' %}
+        <div class="work-box">
+          {% if e.employer %}<p><b>Employer:</b> {{ e.employer }}</p>{% endif %}
+          {% if e.perpetrator_role %}<p><b>Their role:</b> {{ e.perpetrator_role }}</p>{% endif %}
+          {% if e.reported %}<p><b>Reported:</b> {{ e.reported }}{% if e.report_ref %} (ref {{ e.report_ref }}){% endif %}</p>{% endif %}
+          {% if e.work_impact %}<p><b>Impact on work:</b> {{ e.work_impact }}</p>{% endif %}
+        </div>
+      {% endif %}
+      {% if e.media %}
+        <div class="evidence">
+          {% for m in e.media %}
+            <figure class="ev ev-{{ m.kind }}">
+              {% if m.broken %}
+                <div class="ev-broken">This file could not be decrypted.</div>
+              {% elif m.kind == 'image' %}
+                <button type="button" class="reveal" aria-label="Show photo">
+                  <img src="{{ url_for('main.journal_media', media_id=m.id) }}" alt="Evidence photo {{ m.name }}" loading="lazy">
+                  <span class="reveal-label">Tap to show photo</span>
+                </button>
+              {% elif m.kind == 'video' %}
+                <video controls preload="metadata" playsinline src="{{ url_for('main.journal_media', media_id=m.id) }}"></video>
+              {% else %}
+                <audio controls preload="none" src="{{ url_for('main.journal_media', media_id=m.id) }}"></audio>
+              {% endif %}
+              <figcaption>
+                <span>{{ m.name }}</span>
+                <a href="{{ url_for('main.journal_media', media_id=m.id, download=1) }}">Download</a>
+                <form method="post" action="{{ url_for('main.journal_media_delete', media_id=m.id) }}" class="inline confirm-delete">
+                  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                  <button class="link" type="submit">Remove</button>
+                </form>
+              </figcaption>
+            </figure>
+          {% endfor %}
+        </div>
+      {% endif %}
       <form method="post" action="{{ url_for('main.journal_delete', entry_id=e.id) }}" class="confirm-delete">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <button class="danger small" type="submit">Delete</button>
+        <button class="danger small" type="submit">Delete entry</button>
       </form>
     </article>
   {% else %}
-    <p class="muted">No entries yet.</p>
+    <p class="muted">No entries yet. When you're ready, start with just a date and a few words.</p>
   {% endfor %}
 </section>
 {% endblock %}

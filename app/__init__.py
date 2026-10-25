@@ -49,6 +49,14 @@ def create_app(test_config: dict | None = None) -> Flask:
         LOCKOUT_MINUTES=15,
         CALLBACK_RETENTION_DAYS=30,
         EVENT_RETENTION_DAYS=365,
+        MEDIA_LIMITS={                               # per file, by detected kind
+            "image": 10 * 1024 * 1024,
+            "audio": 20 * 1024 * 1024,
+            "video": 50 * 1024 * 1024,
+        },
+        MEDIA_MAX_FILES_PER_ENTRY=5,
+        MEDIA_USER_QUOTA=150 * 1024 * 1024,           # PythonAnywhere free disk is 512 MB in total
+        MAX_UPLOAD_BYTES=120 * 1024 * 1024,           # whole journal form; everything else stays at 64 KB
         RATE_LIMITS={                                # bucket: (requests, seconds)
             "chat": (30, 60),
             "login": (10, 300),
@@ -59,6 +67,9 @@ def create_app(test_config: dict | None = None) -> Flask:
     )
     if test_config:
         app.config.update(test_config)
+    # Evidence files live next to the database (outside the code folder) unless set explicitly.
+    app.config.setdefault("MEDIA_DIR", os.environ.get("THETHA_MEDIA_DIR")
+                          or os.path.join(os.path.dirname(os.path.abspath(app.config["DATABASE"])), "media"))
     _load_keys(app)
     app.extensions["vault"] = Vault(app.config["MASTER_KEY"])
 

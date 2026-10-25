@@ -22,6 +22,7 @@ HELPLINES = {
     "lifeline": {"name": "Lifeline Counselling", "number": "0861 322 322", "note": "24/7 counselling"},
     "tears": {"name": "TEARS Foundation", "number": "*134*7355#", "note": "Free USSD, sexual abuse support"},
     "legal_aid": {"name": "Legal Aid South Africa", "number": "0800 110 110", "note": "Free legal help"},
+    "ccma": {"name": "CCMA", "number": "0861 16 16 16", "note": "Workplace disputes, including harassment"},
 }
 
 PROTECTION_ORDER_STEPS = [
@@ -40,7 +41,15 @@ SAFETY_PLAN_DOCUMENTS = [
     "Medication & clinic card", "Protection order copy", "Spare keys", "Some cash / airtime",
 ]
 
-JOURNAL_TYPES = ["physical", "emotional", "sexual", "financial", "threats", "online", "other"]
+JOURNAL_TYPES = ["physical", "emotional", "sexual", "sexual harassment", "financial", "threats",
+                 "stalking", "bullying or intimidation", "online", "other"]
+
+JOURNAL_SETTINGS = ["home", "workplace", "school or campus", "public place", "online", "other"]
+
+WORKPLACE_ROLES = ["manager or supervisor", "colleague", "client or customer", "contractor or supplier", "other"]
+
+WORKPLACE_REPORTED = ["not yet", "yes, to my manager", "yes, to HR", "yes, to my union",
+                      "yes, to the police", "yes, to the CCMA", "yes, somewhere else"]
 
 
 def pick(*keys):

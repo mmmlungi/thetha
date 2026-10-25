@@ -1,3 +1,4 @@
+import hashlib
 import json
 import secrets
 from collections import Counter
@@ -9,10 +10,11 @@ from flask import (Blueprint, Response, abort, current_app, flash, g, jsonify, r
                    render_template, request, session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from . import chatbot
+from . import chatbot, exports, media
 from .crypto import DecryptionError
 from .db import audit, get_db, utcnow
-from .resources import HELPLINES, JOURNAL_TYPES, PROTECTION_ORDER_STEPS, PROVINCES, SAFETY_PLAN_DOCUMENTS
+from .resources import (HELPLINES, JOURNAL_SETTINGS, JOURNAL_TYPES, PROTECTION_ORDER_STEPS, PROVINCES,
+                        SAFETY_PLAN_DOCUMENTS, WORKPLACE_REPORTED, WORKPLACE_ROLES)
 from .security import (ValidationError, check_password_policy, clean_choice, clean_past_date,
                        clean_phone, clean_text, clean_username, login_required, rate_limit)
 
@@ -36,6 +38,11 @@ def load_user():
                                   (uid,)).fetchone()
         if g.user is None:
             session.clear()
+
+
+@bp.app_template_filter("filesize")
+def filesize(n):
+    return exports.human_size(int(n or 0)) if n else "0 KB"
 
 
 @bp.app_context_processor
@@ -105,6 +112,35 @@ def resources():
 @bp.get("/healthz")
 def healthz():
     return jsonify(status="ok")
+
+
+# ---------------------------------------------------------------- installable app (PWA)
+@bp.get("/manifest.webmanifest")
+def manifest():
+    icon = lambda f, size, purpose: {"src": url_for("static", filename=f), "sizes": size,  # noqa: E731
+                                     "type": "image/png", "purpose": purpose}
+    data = {
+        "name": "Dudu", "short_name": "Dudu",
+        "description": "Private support, safety planning and an encrypted journal.",
+        "start_url": "/", "scope": "/", "display": "standalone", "orientation": "portrait",
+        "background_color": "#ff4d00", "theme_color": "#ff4d00",
+        "icons": [icon("icon-192.png", "192x192", "any"), icon("icon-512.png", "512x512", "any"),
+                  icon("icon-maskable-512.png", "512x512", "maskable")],
+    }
+    return Response(json.dumps(data), mimetype="application/manifest+json")
+
+
+@bp.get("/sw.js")
+def service_worker():
+    # Served from the site root so it may control every page.
+    resp = current_app.send_static_file("sw.js")
+    resp.headers["Content-Type"] = "application/javascript"
+    return resp
+
+
+@bp.get("/offline")
+def offline():
+    return render_template("offline.html")
 
 
 # ---------------------------------------------------------------- accounts
@@ -188,40 +224,104 @@ def logout():
     return redirect(url_for("main.index"))
 
 
-# ---------------------------------------------------------------- journal (encrypted)
+# ---------------------------------------------------------------- journal (encrypted, with evidence files)
 def _journal_ctx(uid):
     return f"journal:{uid}"
+
+
+def _storage_used(uid):
+    return get_db().execute("SELECT COALESCE(SUM(size), 0) FROM journal_media WHERE user_id = ?",
+                            (uid,)).fetchone()[0]
+
+
+def _journal_page(uid, status=200):
+    cfg = current_app.config
+    return render_template("journal.html", entries=_load_journal(uid), types=JOURNAL_TYPES,
+                           settings=JOURNAL_SETTINGS, roles=WORKPLACE_ROLES, reported=WORKPLACE_REPORTED,
+                           storage=_storage_used(uid), quota=cfg["MEDIA_USER_QUOTA"],
+                           max_files=cfg["MEDIA_MAX_FILES_PER_ENTRY"], form=request.form), status
+
+
+def _read_entry_form():
+    setting = clean_choice(request.form.get("setting") or "home", JOURNAL_SETTINGS, "Where it happened")
+    entry = {
+        "date": clean_past_date(request.form.get("date"), "Incident date"),
+        "type": clean_choice(request.form.get("type"), JOURNAL_TYPES, "Type of abuse"),
+        "setting": setting,
+        "description": clean_text(request.form.get("description"), 4000, True, "What happened"),
+        "location": clean_text(request.form.get("location"), 200, field="Location"),
+        "injuries": clean_text(request.form.get("injuries"), 1000, field="Injuries"),
+        "witnesses": clean_text(request.form.get("witnesses"), 500, field="Witnesses"),
+    }
+    if setting == "workplace":
+        entry.update({
+            "employer": clean_text(request.form.get("employer"), 120, field="Employer"),
+            "perpetrator_role": clean_choice(request.form.get("perpetrator_role") or None, WORKPLACE_ROLES,
+                                             "Their role at work", required=False) or "",
+            "reported": clean_choice(request.form.get("reported") or "not yet", WORKPLACE_REPORTED,
+                                     "Have you reported it"),
+            "report_ref": clean_text(request.form.get("report_ref"), 80, field="Reference number"),
+            "work_impact": clean_text(request.form.get("work_impact"), 1000, field="Impact on your work"),
+        })
+    return entry
 
 
 @bp.route("/journal", methods=["GET", "POST"])
 @login_required()
 @rate_limit("write")
 def journal():
-    db, uid = get_db(), g.user["id"]
+    db, uid, v = get_db(), g.user["id"], vault()
     if request.method == "POST":
         try:
-            entry = {
-                "date": clean_past_date(request.form.get("date"), "Incident date"),
-                "type": clean_choice(request.form.get("type"), JOURNAL_TYPES, "Type of abuse"),
-                "description": clean_text(request.form.get("description"), 4000, True, "What happened"),
-                "location": clean_text(request.form.get("location"), 200, field="Location"),
-                "injuries": clean_text(request.form.get("injuries"), 1000, field="Injuries"),
-                "witnesses": clean_text(request.form.get("witnesses"), 500, field="Witnesses"),
-            }
+            entry = _read_entry_form()
+            uploads = media.read_uploads(request.files.getlist("media"), _storage_used(uid))
         except ValidationError as exc:
             flash(str(exc), "error")
-            return render_template("journal.html", entries=_load_journal(uid), types=JOURNAL_TYPES), 400
-        db.execute("INSERT INTO journal_entries (user_id, payload_enc, created_at) VALUES (?, ?, ?)",
-                   (uid, vault().encrypt_json(entry, _journal_ctx(uid)), utcnow()))
-        db.commit()
-        flash("Entry saved and encrypted.", "ok")
+            return _journal_page(uid, 400)
+        written = []
+        try:
+            cur = db.execute("INSERT INTO journal_entries (user_id, payload_enc, created_at) VALUES (?, ?, ?)",
+                             (uid, v.encrypt_json(entry, _journal_ctx(uid)), utcnow()))
+            for item in uploads:
+                name = media.write_encrypted(v, uid, item["data"])
+                written.append(name)
+                meta = {"name": item["name"], "mime": item["mime"], "kind": item["kind"],
+                        "size": len(item["data"]), "sha256": hashlib.sha256(item["data"]).hexdigest()}
+                db.execute("INSERT INTO journal_media (entry_id, user_id, stored_name, size, meta_enc, created_at) "
+                           "VALUES (?, ?, ?, ?, ?, ?)",
+                           (cur.lastrowid, uid, name, meta["size"], v.encrypt_json(meta, media.meta_ctx(uid, name)),
+                            utcnow()))
+            db.commit()
+        except Exception:
+            db.rollback()
+            media.delete_files(written)  # never leave orphaned evidence behind
+            raise
+        n = len(uploads)
+        flash("Entry saved and encrypted." + (f" {n} file{'s' if n != 1 else ''} attached." if n else ""), "ok")
         return redirect(url_for("main.journal"))
-    return render_template("journal.html", entries=_load_journal(uid), types=JOURNAL_TYPES)
+    return _journal_page(uid)
 
 
-def _load_journal(uid):
+def _load_media(uid):
+    by_entry = {}
+    rows = get_db().execute("SELECT id, entry_id, stored_name, size, meta_enc, created_at FROM journal_media "
+                            "WHERE user_id = ? ORDER BY id", (uid,)).fetchall()
+    for r in rows:
+        try:
+            meta = vault().decrypt_json(r["meta_enc"], media.meta_ctx(uid, r["stored_name"]))
+        except DecryptionError:
+            meta = {"name": "[unreadable file]", "mime": "application/octet-stream", "kind": "image",
+                    "sha256": "-", "size": r["size"], "broken": True}
+        by_entry.setdefault(r["entry_id"], []).append(
+            {"id": r["id"], "stored_name": r["stored_name"], "uploaded_at": r["created_at"], **meta})
+    return by_entry
+
+
+def _load_journal(uid, oldest_first=False):
+    order = "ASC" if oldest_first else "DESC"
     rows = get_db().execute("SELECT id, payload_enc, created_at FROM journal_entries WHERE user_id = ? "
-                            "ORDER BY id DESC", (uid,)).fetchall()
+                            f"ORDER BY id {order}", (uid,)).fetchall()  # nosec B608 - order is a constant
+    files = _load_media(uid)
     entries = []
     for r in rows:
         try:
@@ -229,19 +329,68 @@ def _load_journal(uid):
         except DecryptionError:
             current_app.logger.error("Journal entry %s failed integrity check", r["id"])
             data = {"date": "-", "type": "other", "description": "[This entry could not be decrypted]"}
-        entries.append({"id": r["id"], "created_at": r["created_at"], **data})
+        entries.append({"id": r["id"], "created_at": r["created_at"], "media": files.get(r["id"], []), **data})
+    # Order by when it happened, not when it was typed in (people often write things down later).
+    entries.sort(key=lambda e: (e.get("date") or "", e["id"]), reverse=not oldest_first)
     return entries
+
+
+@bp.get("/journal/media/<int:media_id>")
+@login_required()
+def journal_media(media_id):
+    uid = g.user["id"]
+    # user_id in the WHERE clause: nobody can open someone else's file by guessing its number (IDOR).
+    row = get_db().execute("SELECT stored_name, meta_enc FROM journal_media WHERE id = ? AND user_id = ?",
+                           (media_id, uid)).fetchone()
+    if row is None:
+        abort(404)
+    try:
+        meta = vault().decrypt_json(row["meta_enc"], media.meta_ctx(uid, row["stored_name"]))
+        data = media.read_decrypted(vault(), uid, row["stored_name"])
+    except (DecryptionError, OSError):
+        current_app.logger.error("Evidence file %s failed integrity check", media_id)
+        abort(404)
+    rng = request.range
+    span = rng.range_for_length(len(data)) if rng else None
+    if span:  # iPhones need byte ranges to play video and audio
+        resp = Response(data[span[0]:span[1]], 206, mimetype=meta["mime"])
+        resp.headers["Content-Range"] = rng.to_content_range_header(len(data))
+    else:
+        resp = Response(data, mimetype=meta["mime"])
+    resp.headers["Accept-Ranges"] = "bytes"
+    disposition = "attachment" if request.args.get("download") else "inline"
+    resp.headers["Content-Disposition"] = f'{disposition}; filename="{meta["name"]}"'
+    resp.headers["Content-Security-Policy"] = "default-src 'none'; img-src 'self'; media-src 'self'; sandbox"
+    return resp
+
+
+@bp.post("/journal/media/<int:media_id>/delete")
+@login_required()
+def journal_media_delete(media_id):
+    db = get_db()
+    row = db.execute("SELECT stored_name FROM journal_media WHERE id = ? AND user_id = ?",
+                     (media_id, g.user["id"])).fetchone()
+    if row is None:
+        abort(404)
+    db.execute("DELETE FROM journal_media WHERE id = ?", (media_id,))
+    db.commit()
+    media.delete_files([row["stored_name"]])
+    flash("File permanently deleted.", "ok")
+    return redirect(url_for("main.journal"))
 
 
 @bp.post("/journal/<int:entry_id>/delete")
 @login_required()
 def journal_delete(entry_id):
     db = get_db()
+    names = [r[0] for r in db.execute("SELECT stored_name FROM journal_media WHERE entry_id = ? AND user_id = ?",
+                                      (entry_id, g.user["id"]))]
     # user_id in the WHERE clause prevents deleting someone else's entry (IDOR).
     cur = db.execute("DELETE FROM journal_entries WHERE id = ? AND user_id = ?", (entry_id, g.user["id"]))
     db.commit()
     if cur.rowcount == 0:
         abort(404)
+    media.delete_files(names)
     flash("Entry permanently deleted.", "ok")
     return redirect(url_for("main.journal"))
 
@@ -278,11 +427,59 @@ def safety_plan():
     return render_template("safety_plan.html", plan=plan, docs=SAFETY_PLAN_DOCUMENTS)
 
 
-# ---------------------------------------------------------------- POPIA: access & erasure
+# ---------------------------------------------------------------- POPIA: access, export & erasure
+def _alias():
+    try:
+        return vault().decrypt(g.user["alias_enc"], f"alias:{g.user['username_index']}")
+    except DecryptionError:
+        return "Dudu user"
+
+
+def _download(data, mimetype, stem, ext):
+    return Response(data, mimetype=mimetype, headers={
+        "Content-Disposition": f"attachment; filename={stem}-{date.today().isoformat()}.{ext}"})
+
+
+def _my_data_page(status=200):
+    uid = g.user["id"]
+    count = get_db().execute("SELECT COUNT(*) FROM journal_entries WHERE user_id = ?", (uid,)).fetchone()[0]
+    return render_template("my_data.html", entry_count=count, storage=_storage_used(uid),
+                           quota=current_app.config["MEDIA_USER_QUOTA"]), status
+
+
 @bp.get("/my-data")
 @login_required()
 def my_data():
-    return render_template("my_data.html")
+    return _my_data_page()
+
+
+@bp.get("/my-data/report.pdf")
+@login_required()
+def my_data_pdf():
+    uid = g.user["id"]
+    pdf = exports.build_pdf(_load_journal(uid, oldest_first=True), _alias(), vault(), uid)
+    audit("export_pdf", "survivor", f"user:{uid}")
+    return _download(pdf, "application/pdf", "incident-record", "pdf")
+
+
+@bp.get("/my-data/evidence.zip")
+@login_required()
+def my_data_zip():
+    uid = g.user["id"]
+    entries = _load_journal(uid, oldest_first=True)
+    pdf = exports.build_pdf(entries, _alias(), vault(), uid)
+    audit("export_zip", "survivor", f"user:{uid}")
+    return _download(exports.build_zip(entries, _alias(), vault(), uid, pdf), "application/zip",
+                     "evidence-pack", "zip")
+
+
+@bp.get("/my-data/print")
+@login_required()
+def my_data_print():
+    uid = g.user["id"]
+    audit("export_print", "survivor", f"user:{uid}")
+    return render_template("journal_print.html", entries=_load_journal(uid, oldest_first=True), alias=_alias(),
+                           generated=datetime.now(timezone.utc).strftime("%d %B %Y, %H:%M UTC"))
 
 
 @bp.get("/my-data/export")
@@ -290,14 +487,18 @@ def my_data():
 def my_data_export():
     uid = g.user["id"]
     row = get_db().execute("SELECT payload_enc FROM safety_plans WHERE user_id = ?", (uid,)).fetchone()
+    journal_items = []
+    for e in _load_journal(uid, oldest_first=True):
+        e["media"] = [{k: m[k] for k in ("name", "mime", "kind", "size", "sha256", "uploaded_at") if k in m}
+                      for m in e["media"]]
+        journal_items.append(e)
     export = {
         "exported_at": utcnow(),
-        "journal": _load_journal(uid),
+        "journal": journal_items,
         "safety_plan": vault().decrypt_json(row["payload_enc"], f"safety:{uid}") if row else None,
     }
     audit("data_export", "survivor", f"user:{uid}")
-    return Response(json.dumps(export, indent=2), mimetype="application/json",
-                    headers={"Content-Disposition": "attachment; filename=my-records.json"})
+    return _download(json.dumps(export, indent=2), "application/json", "my-records", "json")
 
 
 @bp.post("/my-data/delete")
@@ -307,10 +508,12 @@ def my_data_delete():
     user = db.execute("SELECT * FROM users WHERE id = ?", (g.user["id"],)).fetchone()
     if not check_password_hash(user["password_hash"], request.form.get("password", "")):
         flash("Password incorrect. Nothing was deleted.", "error")
-        return render_template("my_data.html"), 401
-    db.execute("DELETE FROM users WHERE id = ?", (user["id"],))  # cascades to journal + plan
+        return _my_data_page(401)
+    names = [r[0] for r in db.execute("SELECT stored_name FROM journal_media WHERE user_id = ?", (user["id"],))]
+    db.execute("DELETE FROM users WHERE id = ?", (user["id"],))  # cascades to journal, files table, plan
     db.commit()
     db.execute("VACUUM")                                         # rewrite file, drop freed pages
+    media.delete_files(names)
     audit("account_erased", "survivor", None)
     session.clear()
     flash("All your data has been permanently deleted.", "ok")

@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#f1f8f6" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0b1514" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ff4d00" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#ff4d00" media="(prefers-color-scheme: dark)">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
   <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='favicon-64.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ url_for('main.manifest') }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Dudu">
   {# Neutral tab title so it isn't obvious on a shared phone #}
   <title>Dudu · Wellness</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -56,6 +59,9 @@
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
+  <div class="install-bar" id="install-bar" hidden>
+    <button type="button" id="install-btn">📲 Add Dudu to your home screen</button>
+  </div>
   <footer>Made with care in South Africa · Your chat is never saved · Your journal, plan and contact details are encrypted</footer>
 </body>
 </html>

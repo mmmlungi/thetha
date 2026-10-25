@@ -92,7 +92,13 @@ def csrf_token() -> str:
     return session["_csrf"]
 
 
+UPLOAD_ENDPOINTS = {"main.journal"}  # only these may receive large (file) bodies
+
+
 def verify_csrf():
+    if request.endpoint in UPLOAD_ENDPOINTS:
+        # Must be raised before the form is parsed below; every other route keeps the 64 KB cap.
+        request.max_content_length = current_app.config["MAX_UPLOAD_BYTES"]
     if request.method != "POST" or request.endpoint in CSRF_EXEMPT:
         return
     sent = request.form.get("_csrf") or request.headers.get("X-CSRF-Token") or ""
@@ -157,16 +163,18 @@ def login_required(role: str | None = None):
 
 
 # ---------------------------------------------------------------- headers
-CSP = ("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
-       "connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'; object-src 'none'")
+CSP = ("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; "
+       "media-src 'self' blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; "
+       "frame-ancestors 'none'; form-action 'self'; base-uri 'none'; object-src 'none'")
 
 
 def set_security_headers(resp):
-    resp.headers["Content-Security-Policy"] = CSP
+    resp.headers.setdefault("Content-Security-Policy", CSP)  # a view may set a stricter one
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["X-Frame-Options"] = "DENY"
     resp.headers["Referrer-Policy"] = "no-referrer"
-    resp.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+    # Microphone/camera only for this site itself (voice notes, photos); never for embedded content.
+    resp.headers["Permissions-Policy"] = "geolocation=(), camera=(self), microphone=(self)"
     # Shared phones: never let the browser cache pages a partner could reopen with "back".
     resp.headers["Cache-Control"] = "no-store, max-age=0"
     resp.headers["Pragma"] = "no-cache"

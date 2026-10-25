@@ -71,6 +71,19 @@ class Vault:
         except (InvalidTag, ValueError, UnicodeDecodeError) as exc:
             raise DecryptionError("ciphertext rejected") from exc
 
+    def encrypt_bytes(self, data: bytes, context: str) -> bytes:
+        """Binary variant for evidence files: nonce || ciphertext+tag."""
+        nonce = os.urandom(NONCE_LEN)
+        return nonce + self._aead.encrypt(nonce, data, context.encode("utf-8"))
+
+    def decrypt_bytes(self, blob: bytes, context: str) -> bytes:
+        if not isinstance(blob, (bytes, bytearray)) or len(blob) < NONCE_LEN + TAG_LEN:
+            raise DecryptionError("ciphertext too short")
+        try:
+            return self._aead.decrypt(blob[:NONCE_LEN], blob[NONCE_LEN:], context.encode("utf-8"))
+        except InvalidTag as exc:
+            raise DecryptionError("ciphertext rejected") from exc
+
     def encrypt_json(self, data, context: str) -> str:
         return self.encrypt(json.dumps(data, separators=(",", ":")), context)
 

@@ -1,4 +1,6 @@
-﻿"""Fill the dev database with demo data for presentations. Never run in production."""
+"""Fill the dev database with demo data for presentations. Never run in production."""
+import hashlib
+import io
 import os
 import random
 import secrets
@@ -11,6 +13,7 @@ from werkzeug.security import generate_password_hash  # noqa: E402
 
 from app import create_app  # noqa: E402
 from app.db import get_db, utcnow  # noqa: E402
+from app import media  # noqa: E402
 from app.resources import PROVINCES  # noqa: E402
 from app.security import check_password_policy  # noqa: E402
 
@@ -21,6 +24,42 @@ SHOWN_PASSWORD = "<your chosen password>" if os.environ.get("THETHA_DEMO_PASSWOR
 INTENTS = ["abuse_disclosure"] * 9 + ["protection_order"] * 6 + ["safety_plan"] * 4 + \
           ["sexual_assault"] * 3 + ["financial_abuse"] * 3 + ["online_abuse"] * 2 + \
           ["counselling"] * 3 + ["shelter"] * 2 + ["emergency"] * 2 + ["greeting"] * 5 + ["risk_result"] * 4
+
+
+def _demo_screenshot() -> bytes:
+    """A made-up chat screenshot, so the demo shows evidence without anything graphic."""
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", (540, 360), (236, 229, 221))
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, 540, 54), fill=(7, 94, 84))
+    d.text((20, 18), "Mr K (Supervisor)", fill=(255, 255, 255))
+    bubbles = [("If you want to keep this job you'll be nicer to me.", 80),
+               ("Come to my office after your shift. Alone.", 160),
+               ("Don't tell HR. Nobody will believe you anyway.", 240)]
+    for text, y in bubbles:
+        d.rounded_rectangle((20, y, 470, y + 56), radius=12, fill=(255, 255, 255))
+        d.text((36, y + 20), text, fill=(30, 30, 30))
+    buf = io.BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def _seed_workplace_entry(db, v, demo_id):
+    entry = {"date": (date.today() - timedelta(days=5)).isoformat(), "type": "sexual harassment",
+             "setting": "workplace", "description": "My supervisor sent me these messages after I refused to "
+             "go for drinks with him. The next day he moved me to night shift.",
+             "location": "Warehouse, Germiston", "injuries": "", "witnesses": "Thandeka saw the messages",
+             "employer": "Example Logistics (demo)", "perpetrator_role": "manager or supervisor",
+             "reported": "yes, to HR", "report_ref": "HR-2026-118", "work_impact": "Moved to night shift, lost overtime"}
+    cur = db.execute("INSERT INTO journal_entries (user_id, payload_enc, created_at) VALUES (?, ?, ?)",
+                     (demo_id, v.encrypt_json(entry, f"journal:{demo_id}"), utcnow()))
+    data = _demo_screenshot()
+    name = media.write_encrypted(v, demo_id, data)
+    meta = {"name": "whatsapp-screenshot.png", "mime": "image/png", "kind": "image", "size": len(data),
+            "sha256": hashlib.sha256(data).hexdigest()}
+    db.execute("INSERT INTO journal_media (entry_id, user_id, stored_name, size, meta_enc, created_at) "
+               "VALUES (?, ?, ?, ?, ?, ?)",
+               (cur.lastrowid, demo_id, name, len(data), v.encrypt_json(meta, media.meta_ctx(demo_id, name)), utcnow()))
 
 
 def main():
@@ -58,6 +97,9 @@ def main():
                     "notes": "He works night shift on Thursdays."}
             db.execute("INSERT OR REPLACE INTO safety_plans (user_id, payload_enc, updated_at) VALUES (?, ?, ?)",
                        (demo_id, v.encrypt_json(plan, f"safety:{demo_id}"), utcnow()))
+
+        if not db.execute("SELECT 1 FROM journal_media WHERE user_id = ?", (demo_id,)).fetchone():
+            _seed_workplace_entry(db, v, demo_id)
 
         if db.execute("SELECT COUNT(*) FROM chat_events").fetchone()[0] >= 400:
             db.commit()

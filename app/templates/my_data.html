@@ -1,12 +1,37 @@
 {% extends "base.html" %}
 {% block content %}
+<section class="card">
+  <h1>Download or print my records</h1>
+  <p class="muted">You own your records. Take them to a lawyer, the police, a court, HR or the CCMA. You have {{ entry_count }} journal {{ 'entry' if entry_count == 1 else 'entries' }} and {{ storage|filesize }} of evidence files.</p>
+  <div class="export-grid">
+    <a class="export p-rose" href="{{ url_for('main.my_data_pdf') }}">
+      <span class="export-icon" aria-hidden="true">📄</span>
+      <strong>PDF report</strong>
+      <span>Every incident in date order, with photos and file fingerprints. Easy to email or print.</span>
+    </a>
+    <a class="export p-blue" href="{{ url_for('main.my_data_print') }}">
+      <span class="export-icon" aria-hidden="true">🖨</span>
+      <strong>Printable page</strong>
+      <span>Opens a clean page to print, or to save as PDF from your phone.</span>
+    </a>
+    <a class="export p-green" href="{{ url_for('main.my_data_zip') }}">
+      <span class="export-icon" aria-hidden="true">🗂</span>
+      <strong>Evidence pack (ZIP)</strong>
+      <span>The PDF plus every original photo, video and voice note, with fingerprints to prove they haven't been changed.</span>
+    </a>
+    <a class="export p-earth" href="{{ url_for('main.my_data_export') }}">
+      <span class="export-icon" aria-hidden="true">{ }</span>
+      <strong>Data file (JSON)</strong>
+      <span>Everything, including your safety plan, in a technical format. For lawyers or IT people.</span>
+    </a>
+  </div>
+  <p class="note">🔒 <b>Your safety plan is not in the PDF, printout or evidence pack.</b> Court papers are usually shown to the other side, and your plan says where you would go.</p>
+  <p class="note">📱 On a shared phone, delete downloaded files from your Downloads folder once you've sent or printed them.</p>
+</section>
+
 <section class="card narrow">
-  <h1>My data (POPIA rights)</h1>
-  <p>You own your data. You can download it, for example to give to a lawyer or the court, or delete it permanently.</p>
-  <p><a class="button" href="{{ url_for('main.my_data_export') }}">Download my records (JSON)</a></p>
-  <hr>
   <h2>Delete everything</h2>
-  <p class="muted">This permanently erases your account, journal and safety plan. It cannot be undone.</p>
+  <p class="muted">This permanently erases your account, journal, evidence files and safety plan. It cannot be undone. Download your records first if you might need them.</p>
   <form method="post" action="{{ url_for('main.my_data_delete') }}" class="confirm-delete">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <label>Confirm with your password <input type="password" name="password" required></label>
