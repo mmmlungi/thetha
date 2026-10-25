@@ -1,5 +1,6 @@
 /* Dudu: warm, calm "liquid glass" design. No external fonts or images (low data, strict CSP). */
 :root {
+  color-scheme: light;   /* same bright look on every device, even in dark mode */
   /* Taken from the Dudu logo: teal = connection, orange = compassion, green = hope and growth */
   --bg: #ff4d00;
   --ink: #12302d;
@@ -28,17 +29,6 @@
   --radius: 24px;
   --ease: cubic-bezier(.2, .8, .2, 1);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #ff4d00; --ink: #e9f5f3; --muted: #9dbab6; --brand: #5fd4cb; --brand-2: #79d68a;
-    --accent: #ffa552; --accent-ink: #ffb46e; --btn-a: #12857f; --btn-b: #238a3d; --warm: #ffb45e;
-    --glass: rgba(40, 24, 12, .55); --glass-strong: rgba(48, 30, 16, .86); --glass-border: rgba(255, 255, 255, .1);
-    --sheen: rgba(255, 255, 255, .07); --hairline: rgba(255, 255, 255, .1); --shadow: 0 18px 50px -18px rgba(0, 0, 0, .7);
-    --figure: #4fc9bb; --figure-2: #ffa552; --soft: #3a2412; --danger: #ff5f6a; --ok: #7fd6a4;
-    --blob1: #7a3a0c; --blob2: #8a4410; --blob3: #5c3208;
-  }
-}
-
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -324,9 +314,6 @@ tr.urgent td:first-child { border-left: 4px solid var(--danger); }
   --glass-strong: rgba(255, 255, 255, .96);
   --glass-border: rgba(255, 255, 255, .9);
   --shadow: 0 18px 44px -16px rgba(110, 30, 0, .55);
-}
-@media (prefers-color-scheme: dark) {
-  :root { --glass: rgba(34, 18, 10, .82); --glass-strong: rgba(44, 24, 14, .95); --glass-border: rgba(255, 255, 255, .14); }
 }
 .aurora { display: none; }
 footer { color: rgba(255, 255, 255, .92); }

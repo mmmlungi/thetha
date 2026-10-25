@@ -1,7 +1,7 @@
 // Dudu service worker: makes the site installable and shows emergency numbers offline.
 // Privacy rule: only the app shell (styles, script, icons, offline page) is cached.
 // Pages with personal data, the chat API and evidence files are NEVER stored on the phone.
-const CACHE = "dudu-shell-v1";
+const CACHE = "dudu-shell-v2";
 const SHELL = [
   "/offline",
   "/static/style.css",

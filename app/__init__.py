@@ -1,4 +1,5 @@
 """Dudu - a safe, private GBV support chatbot for South Africa."""
+import hashlib
 import json
 import os
 import secrets
@@ -75,6 +76,12 @@ def create_app(test_config: dict | None = None) -> Flask:
 
     security.init_app(app)
     db.init_app(app)
+    # Changes whenever the CSS/JS change, so browsers never keep showing an old design.
+    digest = hashlib.sha256()
+    for name in ("style.css", "app.js"):
+        with open(os.path.join(app.static_folder, name), "rb") as fh:
+            digest.update(fh.read())
+    app.jinja_env.globals["asset_version"] = digest.hexdigest()[:10]
 
     from . import routes
     app.register_blueprint(routes.bp)
