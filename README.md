@@ -1,6 +1,14 @@
 # Dudu: a safe, private GBV support chatbot for South Africa
 
+| | |
+|---|---|
+| **Live application** | https://mlungisi.pythonanywhere.com |
+| **GitHub repository** | https://github.com/mmmlungi/thetha |
+| **Team** | Mlungisi (mmmlungi) and Andile Mngomezulu (AndileMngomezulu) |
+
 *Dudu* comes from *duduza*, "to comfort" in isiZulu and isiXhosa. Its colours are taken from its logo: teal for connection, warm orange for compassion and green for hope.
+
+> **Why Dudu doesn't call an external AI API:** survivors' messages never leave our server. See [section 10](#10-why-dudu-does-not-call-an-external-ai-api).
 
 ## 1. The need
 
@@ -177,5 +185,19 @@ Privacy note: an installed icon is visible on the home screen. People who share 
 - A Thuthuzela Care Centre and police-station locator.
 - Redis-backed rate limiting and Postgres when running more than one server.
 - Partnerships with the GBV Command Centre and NGOs. **Verify all helpline numbers with each organisation before launch.**
+
+## 10. Why Dudu does not call an external AI API
+
+Dudu does have an API: the chat screen talks to Dudu's own server (`/api/chat`). What it deliberately does **not** do is send survivors' messages to an outside AI service such as ChatGPT or Claude. This was a design decision, not a missing feature.
+
+1. **Privacy and POPIA.** People type disclosures of abuse, rape and threats, which POPIA treats as special personal information. An external AI API would send those words to a third-party company, usually in another country (POPIA section 72). With Dudu they never leave our server and are never stored.
+2. **Safety.** In an emergency the reply must be right every time. Dudu's answers are written and checked in advance: the right helpline, the 72-hour treatment window after rape, the steps for a protection order. A generative model can invent a wrong phone number or wrong legal advice, and here that could cost a life.
+3. **Testability.** Because replies are predictable, every safety-critical answer is covered by automated tests (for example, "he has a knife" must return 10111 first). A model's output can't be guaranteed the same way.
+4. **Cost and sustainability.** No per-message fees, so an NGO can run Dudu for free on a small server.
+5. **Reliability.** No outside outage, rate limit or key expiry can stop someone getting help.
+
+**Intelligence without an external API:** weighted intent scoring across 5 languages, language detection, typo-tolerant matching, a 6-question danger assessment, and a safety override that puts emergencies first.
+
+**Future option:** an AI model could be added later for open conversation, but only hosted in South Africa or on our own server, with names and numbers removed before processing, and with the fixed safety answers always taking priority.
 
 > Dudu gives information and support. It doesn't replace police, medical or legal professionals.
